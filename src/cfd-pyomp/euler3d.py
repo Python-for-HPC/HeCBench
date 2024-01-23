@@ -18,8 +18,10 @@ import collections
 # ----------------------------------------------------------------
 
 DEBUG = False
-GAMMA = numba.float32(1.4)
-iterations = 2000
+GAMMA = numba.float64(1.4)
+#GAMMA = numba.float32(1.4)
+iterations = 1
+#iterations = 2000
 block_length = 192
 
 NDIM = 3
@@ -55,17 +57,20 @@ def compute_velocity(density, momentum):
 #pragma omp end declare target
 
 #pragma omp declare target
-#@njit(inline='always')
-@njit
+@njit(inline='always')
+#@njit
 def compute_speed_sqd(velocity):
     return velocity.x*velocity.x + velocity.y*velocity.y + velocity.z*velocity.z
 #pragma omp end declare target
 
 #pragma omp declare target
-#@njit(inline='always')
-@njit
+@njit(inline='always')
+#@njit
 def compute_pressure(density, density_energy, speed_sqd, gamma):
-    return (gamma - numba.float32(1.0)) * (density_energy - numba.float32(0.5) * density * speed_sqd)
+    return gamma
+    #return (density_energy - numba.float32(0.5) * density * speed_sqd)
+    #return (gamma + numba.float32(0.0))
+    #return (gamma - numba.float32(1.0)) * (density_energy - numba.float32(0.5) * density * speed_sqd)
 #pragma omp end declare target
 
 # sqrt is a device function
@@ -154,7 +159,8 @@ def initialize_variables(nelr, variables, ff_variable, block_size_1, nvar):
 #@njit(inline='always')
 @njit
 def compute_step_factor(nelr, variables, areas, step_factors, block_size_2, var_density, var_momentum, var_density_energy, gamma):
-    with openmp("target teams distribute parallel for thread_limit(block_size_2)"):
+    #with openmp("target teams distribute parallel for thread_limit(block_size_2) map(to: nelr, var_density, var_momentum, var_density_energy, gamma)"):
+    with openmp("target teams distribute parallel for thread_limit(block_size_2) firstprivate(nelr, var_density, var_momentum, var_density_energy, gamma)"):
         for i in range(nelr):
             density = variables[i + var_density*nelr]
             momentum = coord3(variables[i + (var_momentum+0)*nelr],
@@ -166,9 +172,19 @@ def compute_step_factor(nelr, variables, areas, step_factors, block_size_2, var_
             velocity = compute_velocity(density, momentum)
             speed_sqd = compute_speed_sqd(velocity)
 
-            pressure = compute_pressure(density, density_energy, speed_sqd, gamma)
-            speed_of_sound = compute_speed_of_sound(density, pressure, gamma)
-            step_factors[i] = numba.float32(0.5) / (math.sqrt(areas[i]) * (math.sqrt(speed_sqd) + speed_of_sound))
+            #pressure = compute_pressure(density, density_energy, speed_sqd, gamma)
+            #pressure = gamma
+            #pressure = (gamma - numba.float32(1.0)) 
+            #pressure = (gamma - numba.float32(1.0)) * (density_energy)
+            pressure = (gamma - numba.float32(1.0)) * (density_energy - numba.float32(0.5) * density * speed_sqd)
+            #speed_of_sound = compute_speed_of_sound(density, pressure, gamma)
+            #speed_of_sound = compute_speed_of_sound(density, numba.float32(1.0), gamma)
+
+            #step_factors[i] = speed_of_sound
+            #step_factors[i] = speed_sqd
+            step_factors[i] = pressure
+            #step_factors[i] = pressure + speed_of_sound
+            #step_factors[i] = numba.float32(0.5) / (math.sqrt(areas[i]) * (math.sqrt(speed_sqd) + speed_of_sound))
 #pragma omp end declare target
 
 #pragma omp declare target
@@ -221,6 +237,7 @@ def compute_flux(
         #Float3 flux_contribution_nb_density_energy
         #float speed_sqd_nb, speed_of_sound_nb, pressure_nb
 
+        """
         for j in range(nnb):
           nb = elements_surrounding_elements[i + j*nelr]
           normal = coord3(numba.float32(normals[i + (j + 0*nnb)*nelr]),
@@ -300,6 +317,7 @@ def compute_flux(
         fluxes[i + (var_momentum+1)*nelr] = flux_i_momentum.y
         fluxes[i + (var_momentum+2)*nelr] = flux_i_momentum.z
         fluxes[i + var_density_energy*nelr] = flux_i_density_energy
+        """
 #pragma omp end declare target
 
 #pragma omp declare target
@@ -339,16 +357,33 @@ def core(nel, nelr, h_ff_variable, h_areas, h_elements_surrounding_elements, h_n
     #                            h_old_variables,
     #                            h_step_factors)
     #                 map(from: h_variables)"""):
+
+    print("starting core")
+    print("before target enter data")
+
+    #with openmp("""target enter data
+    #                 map(to:
+    #                   h_ff_variable,
+    #                   h_areas,
+    #                   h_elements_surrounding_elements,
+    #                   h_normals)
+    #                 map(alloc: h_fluxes,
+    #                            h_old_variables,
+    #                            h_step_factors)"""):
+    #    pass
+
     with openmp("""target enter data
                      map(to:
                        h_ff_variable,
                        h_areas,
                        h_elements_surrounding_elements,
                        h_normals)
-                     map(alloc: h_fluxes,
-                                h_old_variables,
-                                h_step_factors)"""):
+                     map(to: h_fluxes,
+                             h_old_variables,
+                             h_step_factors)"""):
         pass
+
+    print("after target enter data")
 
     kernel_start = omp_get_wtime()
 
@@ -357,9 +392,10 @@ def core(nel, nelr, h_ff_variable, h_areas, h_elements_surrounding_elements, h_n
     initialize_variables(nelr, h_fluxes, h_ff_variable, block_size_1, nvar)
     initialize_buffer(h_step_factors, 0, nelr)
 
+    print("before iterations")
     # Begin iterations
     for n in range(iterations):
-        pass
+        print("before copy")
         copy(h_old_variables, h_variables, nelr*NVAR)
 
         # for the first iteration we compute the time step
@@ -370,6 +406,7 @@ def core(nel, nelr, h_ff_variable, h_areas, h_elements_surrounding_elements, h_n
                     print(i, h_old_variables[i], h_variables[i])
         """
 
+        print("before compute_step_factor")
         compute_step_factor(nelr, h_variables, h_areas, h_step_factors, block_size_2, var_density, var_momentum, var_density_energy, gamma)
 
         """
@@ -380,6 +417,7 @@ def core(nel, nelr, h_ff_variable, h_areas, h_elements_surrounding_elements, h_n
         """
 
         for j in range(rk):
+            print("before compute_flux")
             compute_flux(
                 nelr,
                 h_elements_surrounding_elements,
@@ -397,10 +435,12 @@ def core(nel, nelr, h_ff_variable, h_areas, h_elements_surrounding_elements, h_n
                 var_density_energy,
                 var_momentum,
                 gamma)
+            print("before time_step")
             time_step(j, nelr, h_old_variables, h_variables, h_step_factors, h_fluxes, block_size_4, rk, var_momentum, var_density, var_density_energy)
 
         kernel_end = omp_get_wtime()
 
+    print("before target exit data")
     with openmp("""target exit data map(from: h_variables)"""):
         pass
 
@@ -494,7 +534,7 @@ if __name__ == "__main__":
 
     offload_start = omp_get_wtime()
 
-    print(type(nel), type(nelr), type(h_ff_variable))
+    print("nel=", type(nel), "nelr=", type(nelr), "h_ff_variable=", type(h_ff_variable))
     kernel_time = core(nel, nelr, h_ff_variable, h_areas, h_elements_surrounding_elements, h_normals, h_fluxes, h_old_variables, h_step_factors, h_variables, NVAR, BLOCK_SIZE_0, BLOCK_SIZE_1, BLOCK_SIZE_2, BLOCK_SIZE_3, BLOCK_SIZE_4, RK, VAR_DENSITY, VAR_MOMENTUM, VAR_DENSITY_ENERGY, GAMMA, NNB)
     #kernel_time = test(nel, nelr, h_ff_variable, h_areas, h_elements_surrounding_elements, h_normals, h_fluxes, h_old_variables, h_step_factors, h_variables, NVAR, BLOCK_SIZE_0, BLOCK_SIZE_1, BLOCK_SIZE_2, BLOCK_SIZE_3, BLOCK_SIZE_4, RK)
 
