@@ -10,9 +10,6 @@ import collections
 # ----------------------------------------------------------------
 
 DEBUG = False
-NUMBER_PAR_PER_BOX = 100 # keep this low to allow more blocks that share shared memory to run concurrently, code does not work for larger than 110, more speedup can be achieved with larger number and no shared memory used
-
-NUMBER_THREADS = 128 # this should be roughly equal to NUMBER_PAR_PER_BOX for best performance
 
 @numba.njit
 def DOT(A_x, A_y, A_z, B_x, B_y, B_z):
@@ -30,7 +27,8 @@ def init_box(dim_cpu_boxes1d_arg,
              box_cpu_nei_y,
              box_cpu_nei_z,
              box_cpu_nei_number,
-             box_cpu_nei_offset):
+             box_cpu_nei_offset,
+             NUMBER_PAR_PER_BOX):
   nh = 0
 
   # home boxes in z direction
@@ -100,7 +98,9 @@ def core(dim_cpu_boxes1d_arg,
          fv_cpu_v,
          fv_cpu_x,
          fv_cpu_y,
-         fv_cpu_z):
+         fv_cpu_z,
+         NUMBER_PAR_PER_BOX,
+         NUMBER_THREADS):
   with openmp("""target data
                    map(to: box_cpu_x,
                            box_cpu_y,
@@ -233,8 +233,6 @@ def core(dim_cpu_boxes1d_arg,
     kend = omp_get_wtime()
 
 if __name__ == "__main__":
-  print("WG size of kernel = %d", NUMBER_THREADS)
-
   # assing default values
   dim_cpu_arch_arg = 0
   dim_cpu_cores_arg = 1
@@ -242,6 +240,11 @@ if __name__ == "__main__":
 
   argc = len(sys.argv)
   argv = sys.argv
+
+  NUMBER_PAR_PER_BOX = 100 # keep this low to allow more blocks that share shared memory to run concurrently, code does not work for larger than 110, more speedup can be achieved with larger number and no shared memory used
+
+  NUMBER_THREADS = 128 # this should be roughly equal to NUMBER_PAR_PER_BOX for best performance
+  print("WG size of kernel = %d", NUMBER_THREADS)
 
   # go through arguments
   if argc == 3:
@@ -312,7 +315,8 @@ if __name__ == "__main__":
            box_cpu_nei_y,
            box_cpu_nei_z,
            box_cpu_nei_number,
-           box_cpu_nei_offset)
+           box_cpu_nei_offset,
+           NUMBER_PAR_PER_BOX)
 
   #====================================================================================================100
   #  PARAMETERS, DISTANCE, CHARGE AND FORCE
@@ -358,7 +362,9 @@ if __name__ == "__main__":
        fv_cpu_v,
        fv_cpu_x,
        fv_cpu_y,
-       fv_cpu_z)
+       fv_cpu_z,
+       NUMBER_PAR_PER_BOX,
+       NUMBER_THREADS)
   end = omp_get_wtime()
   print("Device offloading time:", float(end-start) / 1000000)
   print("Kernel execution time:", float(kend-kstart) / 1000000)
