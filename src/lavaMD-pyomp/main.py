@@ -100,7 +100,8 @@ def core(dim_cpu_boxes1d_arg,
          fv_cpu_y,
          fv_cpu_z,
          NUMBER_PAR_PER_BOX,
-         NUMBER_THREADS):
+         NUMBER_THREADS,
+         par_cpu_alpha):
   with openmp("""target data
                    map(to: box_cpu_x,
                            box_cpu_y,
@@ -232,7 +233,7 @@ def core(dim_cpu_boxes1d_arg,
                 pass
     kend = omp_get_wtime()
 
-if __name__ == "__main__":
+def main():
   # assing default values
   dim_cpu_arch_arg = 0
   dim_cpu_cores_arg = 1
@@ -364,7 +365,8 @@ if __name__ == "__main__":
        fv_cpu_y,
        fv_cpu_z,
        NUMBER_PAR_PER_BOX,
-       NUMBER_THREADS)
+       NUMBER_THREADS,
+       par_cpu_alpha)
   end = omp_get_wtime()
   print("Device offloading time:", float(end-start) / 1000000)
   print("Kernel execution time:", float(kend-kstart) / 1000000)
@@ -375,3 +377,7 @@ if __name__ == "__main__":
       print("g=", g, fv_cpu_v[offset+g], fv_cpu_x[offset+g], fv_cpu_y[offset+g], fv_cpu_z[offset+g])
 
   sys.exit(0)
+
+if __name__ == "__main__":
+  main()
+
