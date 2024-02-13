@@ -125,6 +125,16 @@ def core(dim_cpu_boxes1d_arg,
                                fv_cpu_z)"""):
     kstart = omp_get_wtime()
     with openmp("target teams num_teams(dim_cpu_number_boxes) thread_limit(NUMBER_THREADS)"):
+      rA_shared_v = omp_shared_array(100, np.float32)
+      rA_shared_x = omp_shared_array(100, np.float32)
+      rA_shared_y = omp_shared_array(100, np.float32)
+      rA_shared_z = omp_shared_array(100, np.float32)
+      rB_shared_v = omp_shared_array(100, np.float32)
+      rB_shared_x = omp_shared_array(100, np.float32)
+      rB_shared_y = omp_shared_array(100, np.float32)
+      rB_shared_z = omp_shared_array(100, np.float32)
+      qB_shared   = omp_shared_array(100, np.float32)
+      """
       rA_shared_v = np.empty(100, dtype=np.float32)
       rA_shared_x = np.empty(100, dtype=np.float32)
       rA_shared_y = np.empty(100, dtype=np.float32)
@@ -134,6 +144,7 @@ def core(dim_cpu_boxes1d_arg,
       rB_shared_y = np.empty(100, dtype=np.float32)
       rB_shared_z = np.empty(100, dtype=np.float32)
       qB_shared = np.empty(100, dtype=np.float32)
+      """
 
       with openmp("parallel"):
         bx = omp_get_team_num()
