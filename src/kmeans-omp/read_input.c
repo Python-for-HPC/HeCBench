@@ -76,7 +76,7 @@ int setup(int argc, char **argv) {
 	int		max_nclusters=5;		/* default value */
 	int		min_nclusters=5;		/* default value */
 	int		best_nclusters = 0;
-	int		nfeatures = 0;
+	int		nfeatures = 1;
 	int		npoints = 0;
 	float	len;
 
@@ -97,7 +97,7 @@ int setup(int argc, char **argv) {
 			case 'i': filename=optarg;
 				  break;
 			case 'b': isBinaryFile = 1;
-				  break;            
+				  break;
 			case 't': threshold=atof(optarg);
 				  break;
 			case 'm': max_nclusters = atoi(optarg);
@@ -129,7 +129,7 @@ int setup(int argc, char **argv) {
 			exit(1);
 		}
 		read(infile, &npoints,   sizeof(int));
-		read(infile, &nfeatures, sizeof(int));        
+		read(infile, &nfeatures, sizeof(int));
 
 		/* allocate space for features[][] and read attributes of all objects */
 		buf         = (float*) malloc(npoints*nfeatures*sizeof(float));
@@ -158,7 +158,7 @@ int setup(int argc, char **argv) {
 				while (strtok(NULL, " ,\t\n") != NULL) nfeatures++;
 				break;
 			}
-		}        
+		}
 
 		/* allocate space for features[] and read attributes of all objects */
 		buf         = (float*) malloc(npoints*nfeatures*sizeof(float));
@@ -169,12 +169,18 @@ int setup(int argc, char **argv) {
 		rewind(infile);
 		i = 0;
 		while (fgets(line, 1024, infile) != NULL) {
-			if (strtok(line, " \t\n") == NULL) continue;            
-			for (j=0; j<nfeatures; j++) {
-				buf[i] = atof(strtok(NULL, " ,\t\n"));             
+            char* tres = strtok(line, " ,\t\n");
+			if (tres == NULL) continue;
+            buf[i] = atof(tres);
+            //printf("reading %d %0.2f\n", i, buf[i]);
+            i++;
+			for (j=1; j<nfeatures; j++) {
+                tres = strtok(NULL, " ,\t\n");
+				buf[i] = atof(tres);
+                //printf("reading %d %0.2f\n", i, buf[i]);
 				//printf("%f ", buf[i]);
 				i++;
-			}            
+			}
 			//printf("\n");
 		}
 		fclose(infile);
@@ -208,7 +214,7 @@ int setup(int argc, char **argv) {
 			max_nclusters,
 			threshold,				/* loop termination factor */
 			&best_nclusters,			/* return: number between min and max */
-			&cluster_centres,		/* return: [best_nclusters][nfeatures] */  
+			&cluster_centres,		/* return: [best_nclusters][nfeatures] */
 			&rmse,					/* Root Mean Squared Error */
 			isRMSE,					/* calculate RMSE */
 			nloops);				/* number of iteration for each number of clusters */		
@@ -266,9 +272,9 @@ int setup(int argc, char **argv) {
 
 
 	/* free up memory */
-	free(features[0]);
-	free(features);    
-	free(cluster_centres[0]);
+	//free(features[0]);
+	free(features);
+	//free(cluster_centres[0]);
 	free(cluster_centres);
 	return(0);
 }

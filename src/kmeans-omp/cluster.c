@@ -29,6 +29,16 @@ int cluster(int npoints,         /* number of data points */
   int rmse;     /* RMSE for each clustering */
   float delta;
 
+  /*
+  printf("input features\n");
+  for (int i = 0; i < npoints; ++i) {
+    for (int j = 0; j < nfeatures; ++j) {
+      printf("%0.2f ", features[i][j]);
+    }
+    printf("\n");
+  }
+  */
+
   /* current memberships of points  */
   int *membership = (int*) malloc(npoints * sizeof(int));
 
@@ -57,6 +67,16 @@ int cluster(int npoints,         /* number of data points */
         feature_swap[i * npoints + tid] = feature[tid * nfeatures + i];
     }
 
+    /*
+    printf("feature swap\n");
+    for (int i = 0; i < npoints; ++i) {
+      for (int j = 0; j < nfeatures; ++j) {
+        printf("%0.2f ", feature_swap[j * npoints + i]);
+      }
+      printf("\n");
+    }
+    */
+
     // create clusters of size 'nclusters'
     float** clusters;
     clusters    = (float**) malloc(nclusters *             sizeof(float*));
@@ -67,6 +87,14 @@ int cluster(int npoints,         /* number of data points */
     int* initial = (int *) malloc (npoints * sizeof(int));
     for (int i = 0; i < npoints; i++) initial[i] = i;
     int initial_points = npoints;
+
+    /*
+    printf("initial\n");
+    for (int i = 0; i < npoints; ++i) {
+      printf("%d ", initial[i]);
+    }
+    printf("\n");
+    */
 
     /* iterate nloops times for each number of clusters */
     for(int lp = 0; lp < nloops; lp++)
@@ -80,9 +108,9 @@ int cluster(int npoints,         /* number of data points */
          without using the initial array
        */	
       for (int i=0; i<nclusters && initial_points >= 0; i++) {
-
-        for (int j=0; j<nfeatures; j++)
+        for (int j=0; j<nfeatures; j++) {
           clusters[i][j] = features[initial[n]][j];	// remapped
+        }
 
         /* swap the selected index with the end index. For the next iteration
            of nloops, initial[0] is differetn from initial[0] in the previous iteration */
@@ -93,6 +121,20 @@ int cluster(int npoints,         /* number of data points */
         initial_points--;
         n++;
       }
+
+      /*
+      printf("clusters and initial %d %d %d\n", lp, initial_points, n);
+      for (int i = 0; i < nclusters; ++i) {
+        for (int j = 0; j < nfeatures; ++j) {
+          printf("%0.2f ", clusters[i][j]);
+        }
+        printf("\n");
+      }
+      for (int i = 0; i < npoints; ++i) {
+        printf("%d ", initial[i]);
+      }
+      printf("\n");
+      */
 
       /* initialize the membership to -1 for all */
       for (int i=0; i < npoints; i++) membership[i] = -1;
@@ -121,6 +163,7 @@ int cluster(int npoints,         /* number of data points */
             for (int l=0; l< nfeatures; l++) {
               ans += (feature_swap[l*npoints+point_id] - cluster[i*nfeatures+l])* 
                 (feature_swap[l*npoints+point_id] - cluster[i*nfeatures+l]);
+              //printf("ans: %f %d %d %d\n", ans, point_id, i, l);
             }
             dist = ans;
             if (dist < min_dist) {
@@ -132,6 +175,14 @@ int cluster(int npoints,         /* number of data points */
         }
        #pragma omp target update from (membership_OCL[0:npoints])
 
+        /*
+        printf("do_loop %d\n", loop);
+        for (int i = 0; i < npoints; ++i) {
+          printf("%d ", membership_OCL[i]);
+        }
+        printf("\n");
+        */
+        
         /* 
            1 compute the 'new' size and center of each cluster 
            2 update the membership of each point. 
@@ -149,8 +200,31 @@ int cluster(int npoints,         /* number of data points */
           for (int j = 0; j < nfeatures; j++)
           {
             new_centers[cluster_id][j] += features[i][j];
+            //printf("aaa: %d %d %f\n", cluster_id, j, features[i][j]);
           }
         }
+
+        /*
+        printf("membership %d\n", loop);
+        for (int i = 0; i < npoints; ++i) {
+          printf("%d ", membership[i]);
+        }
+        printf("\n");
+
+        printf("new_centers\n");
+        for (int i = 0; i < nclusters; ++i) {
+          for (int j = 0; j < nfeatures; ++j) {
+            printf("%0.2f ", new_centers[i][j]);
+          }
+          printf("\n");
+        }
+
+        printf("new_centers_len %d\n", loop);
+        for (int i = 0; i < nclusters; ++i) {
+          printf("%d ", new_centers_len[i]);
+        }
+        printf("\n");
+        */
 
         /* replace old cluster centers with new_centers */
         for (int i=0; i<nclusters; i++) {
@@ -165,7 +239,7 @@ int cluster(int npoints,         /* number of data points */
         c++;
       } while ((delta > threshold) && (loop++ < 500));	/* makes sure loop terminates */
 
-      free(new_centers[0]);
+      //free(new_centers[0]);
       free(new_centers);
       free(new_centers_len);
 
@@ -189,12 +263,12 @@ int cluster(int npoints,         /* number of data points */
 
     // free the previous cluster centers before using the updated one
     if (*cluster_centres) {
-      free((*cluster_centres)[0]);
+      //free((*cluster_centres)[0]);
       free(*cluster_centres);
     }
     *cluster_centres = clusters;
 
-    free(initial);
+    //free(initial);
   }
 }
   free(membership_OCL);
