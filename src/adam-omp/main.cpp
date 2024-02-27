@@ -23,7 +23,7 @@ inline void adam (
 {
   #pragma omp target teams distribute parallel for thread_limit(256)
   for (size_t j = 0; j < vector_size; j++) {
-    for (int t = 0; t < time_step; t++) {
+    for (int t = 1; t <= time_step; t++) {
       T scaled_grad = g[j]/grad_scale;
       m[j] = b1*m[j] + (1.f-b1)*scaled_grad;
       v[j] = b2*v[j] + (1.f-b2)*scaled_grad*scaled_grad;
