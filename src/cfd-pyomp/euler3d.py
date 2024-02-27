@@ -106,7 +106,7 @@ def compute_flux_contribution(density, momentum, density_energy, pressure, veloc
 #@njit(inline='always')
 @njit
 def copy(dst, src, N):
-    with openmp("target teams distribute parallel for thread_limit(256)"):
+    with openmp("target teams distribute parallel for thread_limit(256) device(1)"):
         for i in range(N):
             dst[i] = src[i]
 #pragma omp end declare target
@@ -135,7 +135,7 @@ def dump(h_variables, nel, nelr):
 @njit
 #@njit(inline='always')
 def initialize_buffer(d, val, number_words):
-    with openmp("target teams distribute parallel for thread_limit(256)"):
+    with openmp("target teams distribute parallel for thread_limit(256) device(1)"):
         for i in range(number_words):
             d[i] = val
 #pragma omp end declare target
@@ -144,7 +144,7 @@ def initialize_buffer(d, val, number_words):
 #@njit(inline='always')
 @njit
 def initialize_variables(nelr, variables, ff_variable, block_size_1, nvar):
-    with openmp("target teams distribute parallel for thread_limit(block_size_1)"):
+    with openmp("target teams distribute parallel for thread_limit(block_size_1) device(1)"):
         for i in range(nelr):
             for j in range(nvar):
                 variables[i + j*nelr] = ff_variable[j]
@@ -155,7 +155,7 @@ def initialize_variables(nelr, variables, ff_variable, block_size_1, nvar):
 @njit
 def compute_step_factor(nelr, variables, areas, step_factors, block_size_2, var_density, var_momentum, var_density_energy, gamma):
     #with openmp("target teams distribute parallel for thread_limit(block_size_2) map(to: nelr, var_density, var_momentum, var_density_energy, gamma)"):
-    with openmp("target teams distribute parallel for thread_limit(block_size_2) firstprivate(nelr, var_density, var_momentum, var_density_energy, gamma)"):
+    with openmp("target teams distribute parallel for thread_limit(block_size_2) firstprivate(nelr, var_density, var_momentum, var_density_energy, gamma) device(1)"):
         for i in range(nelr):
             density = variables[i + var_density*nelr]
             momentum = coord3(variables[i + (var_momentum+0)*nelr],
@@ -195,7 +195,7 @@ def compute_flux(
 
     print("ff_flux:", ff_flux_contribution_density_energy, ff_flux_contribution_density_energy.x)
 
-    with openmp("target teams distribute parallel for thread_limit(block_size_3)"):
+    with openmp("target teams distribute parallel for thread_limit(block_size_3) device(1)"):
       for i in range(nelr):
         smoothing_coefficient = numba.float32(0.2)
 
@@ -245,7 +245,7 @@ def compute_flux(
               flux_contribution_nb_momentum_x, flux_contribution_nb_momentum_y, flux_contribution_nb_momentum_z, flux_contribution_nb_density_energy = compute_flux_contribution(density_nb, momentum_nb, density_energy_nb, pressure_nb, velocity_nb)
 
               # artificial viscosity
-              factor = -normal_len*smoothing_coefficient*numba.float32(0.5)*(speed_i + math.sqrt(speed_sqd_nb) + speed_of_sound_i + speed_of_sound_nb)
+              factor = (normal_len * -1)*smoothing_coefficient*numba.float32(0.5)*(speed_i + math.sqrt(speed_sqd_nb) + speed_of_sound_i + speed_of_sound_nb)
               flux_i_density += factor*(density_i-density_nb)
               flux_i_density_energy += factor*(density_energy_i-density_energy_nb)
               flux_i_momentum = coord3(numba.float32(factor*(momentum_i.x-momentum_nb.x)),
@@ -314,7 +314,7 @@ def compute_flux(
 #pragma omp declare target
 @njit
 def time_step(j, nelr, old_variables, variables, step_factors, fluxes, block_size_4, rk, var_momentum, var_density, var_density_energy):
-    with openmp("target teams distribute parallel for thread_limit(block_size_4)"):
+    with openmp("target teams distribute parallel for thread_limit(block_size_4) device(1)"):
         for i in range(nelr):
             factor = step_factors[i]/numba.float32((rk+1-j))
 
@@ -347,7 +347,7 @@ def core(nel, nelr, h_ff_variable, h_areas, h_elements_surrounding_elements, h_n
     #                 map(alloc: h_fluxes,
     #                            h_old_variables,
     #                            h_step_factors)
-    #                 map(from: h_variables)"""):
+    #                 map(from: h_variables) device(1)"""):
 
     print("starting core")
     print("before target enter data")
@@ -360,7 +360,7 @@ def core(nel, nelr, h_ff_variable, h_areas, h_elements_surrounding_elements, h_n
                        h_normals)
                      map(alloc: h_fluxes,
                                 h_old_variables,
-                                h_step_factors)"""):
+                                h_step_factors) device(1)"""):
         pass
 
     #with openmp("""target enter data
@@ -371,7 +371,7 @@ def core(nel, nelr, h_ff_variable, h_areas, h_elements_surrounding_elements, h_n
     #                   h_normals)
     #                 map(to: h_fluxes,
     #                         h_old_variables,
-    #                         h_step_factors)"""):
+    #                         h_step_factors) device(1)"""):
     #    pass
 
     print("after target enter data")
@@ -392,7 +392,7 @@ def core(nel, nelr, h_ff_variable, h_areas, h_elements_surrounding_elements, h_n
         # for the first iteration we compute the time step
         """
         if DEBUG:
-            with openmp("target update from(h_old_variables) from(h_variables)"):
+            with openmp("target update from(h_old_variables) from(h_variables) device(1)"):
                 for i in range(16):
                     print(i, h_old_variables[i], h_variables[i])
         """
@@ -402,7 +402,7 @@ def core(nel, nelr, h_ff_variable, h_areas, h_elements_surrounding_elements, h_n
 
         """
         if DEBUG:
-            with openmp("target update from(h_step_factors)"):
+            with openmp("target update from(h_step_factors) device(1)"):
                 for i in range(16):
                     print("step factor:", i, h_step_factors[i])
         """
@@ -433,7 +433,7 @@ def core(nel, nelr, h_ff_variable, h_areas, h_elements_surrounding_elements, h_n
         kernel_end = omp_get_wtime()
 
     print("before target exit data")
-    with openmp("""target exit data map(from: h_variables)"""):
+    with openmp("""target exit data map(from: h_variables) device(1)"""):
         pass
 
         ##ifdef OUTPUT
@@ -512,7 +512,7 @@ if __name__ == "__main__":
             h_elements_surrounding_elements[i + j*nelr]-=1 #it's coming in with Fortran numbering
 
             for k in range(NDIM):
-                h_normals[i + (j + k*NNB)*nelr] = -(numba.float32(next(fwg)))
+                h_normals[i + (j + k*NNB)*nelr] = (numba.float32(next(fwg))) * -1
 
     # fill in remaining data
     last = nel - 1
