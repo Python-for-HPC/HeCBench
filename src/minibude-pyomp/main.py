@@ -190,6 +190,7 @@ def loadParameters(args):
     #    params.poses[i] = poses[i * params.nposes : (i + 1) * params.nposes]
     return params
 
+@njit
 def runKernelInternal(protein_xyz,
                       protein_type,
                       ligand_xyz,
@@ -211,7 +212,7 @@ def runKernelInternal(protein_xyz,
                       iterations,
                       FLT_MAX):
 
-    with openmp("""target data map(to: protein_xyz, protein_type, transforms_0, transforms_1, transforms_2, transforms_3, transforms_4, transforms_5, forcefield_rhe, forcefield_hbtype) map(from: results, kernelStart, kernelEnd)"""):
+    with openmp("""target data map(to: protein_xyz, protein_type, transforms_0, transforms_1, transforms_2, transforms_3, transforms_4, transforms_5, forcefield_rhe, forcefield_hbtype) map(from: results, kernelStart, kernelEnd) device(1)"""):
         globalo = math.ceil((nposes / NUM_TD_PER_THREAD))
         teams = math.ceil(globalo / wgSize)
         block = wgSize
