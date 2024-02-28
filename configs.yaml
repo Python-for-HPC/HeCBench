@@ -1,7 +1,0 @@
-benchmarks:
-    - name: adam
-      inputs:
-        default: "10000 200 100"
-      exe:
-        omp: main
-        pyomp: main.py

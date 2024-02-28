@@ -1,0 +1,31 @@
+benchmarks:
+  - name: adam
+    inputs:
+      default: "10000 200 100"
+    exe:
+      omp: main
+      pyomp: main.py
+  - name: floydwarshall
+    inputs:
+      default: "1024 100 16"
+    exe:
+      omp: main
+      pyomp: main.py
+  - name: haccmk
+    inputs:
+      default: "1000"
+    exe:
+      omp: haccmk
+      pyomp: haccmk.py
+  - name: hotspot3D
+    inputs:
+      default: "512 8 5000 ../../../data/hotspot3D/power_512x8 ../../../data/hotspot3D/temp_512x8 /dev/null"
+    exe:
+      omp: main
+      pyomp: hotspot3d.py
+  - name: lavaMD
+    inputs:
+      default: "-boxes1d 30"
+    exe:
+      omp: main
+      pyomp: main.py
