@@ -64,9 +64,6 @@ def compute_speed_sqd(velocity):
 #pragma omp declare target
 @njit(inline='always')
 def compute_pressure(density, density_energy, speed_sqd, gamma):
-    #return gamma
-    #return (density_energy - numba.float32(0.5) * density * speed_sqd)
-    #return (gamma + numba.float32(0.0))
     return (gamma - numba.float32(1.0)) * (density_energy - numba.float32(0.5) * density * speed_sqd)
 #pragma omp end declare target
 
@@ -193,8 +190,6 @@ def compute_flux(
     var_momentum,
     gamma):
 
-    print("ff_flux:", ff_flux_contribution_density_energy, ff_flux_contribution_density_energy.x)
-
     with openmp("target teams distribute parallel for thread_limit(block_size_3) device(1)"):
       for i in range(nelr):
         smoothing_coefficient = numba.float32(0.2)
@@ -211,19 +206,10 @@ def compute_flux(
         speed_i = math.sqrt(speed_sqd_i)
         pressure_i = compute_pressure(density_i, density_energy_i, speed_sqd_i, gamma)
         speed_of_sound_i = compute_speed_of_sound(density_i, pressure_i, gamma)
-        #Float3 flux_contribution_i_momentum_x, flux_contribution_i_momentum_y, flux_contribution_i_momentum_z
-        #Float3 flux_contribution_i_density_energy
         flux_contribution_i_momentum_x, flux_contribution_i_momentum_y, flux_contribution_i_momentum_z, flux_contribution_i_density_energy = compute_flux_contribution(density_i, momentum_i, density_energy_i, pressure_i, velocity_i)
 
         flux_i_density = numba.float32(0.0)
-        #flux_i_momentum = coord3(numba.float32(0.0), numba.float32(0.0), numba.float32(0.0))
         flux_i_density_energy = numba.float32(0.0)
-
-        #float density_energy_nb
-        #Float3 momentum_nb
-        #Float3 flux_contribution_nb_momentum_x, flux_contribution_nb_momentum_y, flux_contribution_nb_momentum_z
-        #Float3 flux_contribution_nb_density_energy
-        #float speed_sqd_nb, speed_of_sound_nb, pressure_nb
 
         for j in range(nnb):
           nb = elements_surrounding_elements[i + j*nelr]
@@ -281,21 +267,23 @@ def compute_flux(
               factor = numba.float32(0.5)*normal.x
               # good
               flux_i_density += factor*(ff_variable[var_momentum+0]+momentum_i.x)
-              #flux_i_density_energy += factor*(flux_contribution_i_density_energy.x)
-              #flux_i_density_energy += (ff_flux_contribution_density_energy.x+flux_contribution_i_density_energy.x)
               flux_i_density_energy += factor*(ff_flux_contribution_density_energy.x+flux_contribution_i_density_energy.x)
-              """
               flux_i_momentum = coord3(numba.float32(factor*(ff_flux_contribution_momentum_x.x + flux_contribution_i_momentum_x.x)),
                                        numba.float32(factor*(ff_flux_contribution_momentum_y.x + flux_contribution_i_momentum_y.x)),
                                        numba.float32(factor*(ff_flux_contribution_momentum_z.x + flux_contribution_i_momentum_z.x)))
 
               factor = numba.float32(0.5)*normal.y
+              """
               flux_i_density += factor*(ff_variable[var_momentum+1]+momentum_i.y)
               flux_i_density_energy += factor*(ff_flux_contribution_density_energy.y+flux_contribution_i_density_energy.y)
+              """
+              """
               flux_i_momentum = coord3(numba.float32(factor*(ff_flux_contribution_momentum_x.y + flux_contribution_i_momentum_x.y)),
                                        numba.float32(factor*(ff_flux_contribution_momentum_y.y + flux_contribution_i_momentum_y.y)),
                                        numba.float32(factor*(ff_flux_contribution_momentum_z.y + flux_contribution_i_momentum_z.y)))
+              """
 
+              """
               factor = numba.float32(0.5)*normal.z
               flux_i_density += factor*(ff_variable[var_momentum+2]+momentum_i.z)
               flux_i_density_energy += factor*(ff_flux_contribution_density_energy.z+flux_contribution_i_density_energy.z)
@@ -338,21 +326,7 @@ def test(nel, nelr, h_ff_variable, h_areas, h_elements_surrounding_elements, h_n
 @njit
 def core(nel, nelr, h_ff_variable, h_areas, h_elements_surrounding_elements, h_normals, h_fluxes, h_old_variables, h_step_factors, h_variables, nvar, block_size_0, block_size_1, block_size_2, block_size_3, block_size_4, rk, var_density, var_momentum, var_density_energy, gamma, nnb):
     # copy far field conditions to the device
-    #with openmp("""target data
-    #                 map(to:
-    #                   h_ff_variable,
-    #                   h_areas,
-    #                   h_elements_surrounding_elements,
-    #                   h_normals)
-    #                 map(alloc: h_fluxes,
-    #                            h_old_variables,
-    #                            h_step_factors)
-    #                 map(from: h_variables) device(1)"""):
-
-    print("starting core")
-    print("before target enter data")
-
-    with openmp("""target enter data
+    with openmp("""target data
                      map(to:
                        h_ff_variable,
                        h_areas,
@@ -360,86 +334,85 @@ def core(nel, nelr, h_ff_variable, h_areas, h_elements_surrounding_elements, h_n
                        h_normals)
                      map(alloc: h_fluxes,
                                 h_old_variables,
-                                h_step_factors) device(1)"""):
-        pass
+                                h_step_factors)
+                     map(from: h_variables)
+                     device(1)"""):
 
-    #with openmp("""target enter data
-    #                 map(to:
-    #                   h_ff_variable,
-    #                   h_areas,
-    #                   h_elements_surrounding_elements,
-    #                   h_normals)
-    #                 map(to: h_fluxes,
-    #                         h_old_variables,
-    #                         h_step_factors) device(1)"""):
-    #    pass
+        #with openmp("""target enter data
+        #                 map(to:
+        #                   h_ff_variable,
+        #                   h_areas,
+        #                   h_elements_surrounding_elements,
+        #                   h_normals)
+        #                 map(alloc: h_fluxes,
+        #                            h_old_variables,
+        #                            h_step_factors) device(1)"""):
+        #    pass
 
-    print("after target enter data")
+        #with openmp("""target enter data
+        #                 map(to:
+        #                   h_ff_variable,
+        #                   h_areas,
+        #                   h_elements_surrounding_elements,
+        #                   h_normals)
+        #                 map(to: h_fluxes,
+        #                         h_old_variables,
+        #                         h_step_factors) device(1)"""):
+        #    pass
 
-    kernel_start = omp_get_wtime()
+        kernel_start = omp_get_wtime()
 
-    initialize_variables(nelr, h_variables, h_ff_variable, block_size_1, nvar)
-    initialize_variables(nelr, h_old_variables, h_ff_variable, block_size_1, nvar)
-    initialize_variables(nelr, h_fluxes, h_ff_variable, block_size_1, nvar)
-    initialize_buffer(h_step_factors, 0, nelr)
+        initialize_variables(nelr, h_variables, h_ff_variable, block_size_1, nvar)
+        initialize_variables(nelr, h_old_variables, h_ff_variable, block_size_1, nvar)
+        initialize_variables(nelr, h_fluxes, h_ff_variable, block_size_1, nvar)
+        initialize_buffer(h_step_factors, 0, nelr)
 
-    print("before iterations")
-    # Begin iterations
-    for n in range(iterations):
-        print("before copy")
-        copy(h_old_variables, h_variables, nelr*NVAR)
+        # Begin iterations
+        for n in range(iterations):
+            copy(h_old_variables, h_variables, nelr*NVAR)
 
-        # for the first iteration we compute the time step
-        """
-        if DEBUG:
-            with openmp("target update from(h_old_variables) from(h_variables) device(1)"):
-                for i in range(16):
-                    print(i, h_old_variables[i], h_variables[i])
-        """
+            # for the first iteration we compute the time step
+            """
+            if DEBUG:
+                with openmp("target update from(h_old_variables) from(h_variables) device(1)"):
+                    for i in range(16):
+                        print(i, h_old_variables[i], h_variables[i])
+            """
 
-        print("before compute_step_factor")
-        compute_step_factor(nelr, h_variables, h_areas, h_step_factors, block_size_2, var_density, var_momentum, var_density_energy, gamma)
+            compute_step_factor(nelr, h_variables, h_areas, h_step_factors, block_size_2, var_density, var_momentum, var_density_energy, gamma)
 
-        """
-        if DEBUG:
-            with openmp("target update from(h_step_factors) device(1)"):
-                for i in range(16):
-                    print("step factor:", i, h_step_factors[i])
-        """
+            """
+            if DEBUG:
+                with openmp("target update from(h_step_factors) device(1)"):
+                    for i in range(16):
+                        print("step factor:", i, h_step_factors[i])
+            """
 
-        for j in range(rk):
-            print("before compute_flux")
-            compute_flux(
-                nelr,
-                nvar,
-                h_elements_surrounding_elements,
-                h_normals,
-                h_variables,
-                h_ff_variable,
-                h_fluxes,
-                h_ff_flux_contribution_density_energy,
-                h_ff_flux_contribution_momentum_x,
-                h_ff_flux_contribution_momentum_y,
-                h_ff_flux_contribution_momentum_z,
-                block_size_3,
-                nnb,
-                var_density,
-                var_density_energy,
-                var_momentum,
-                gamma)
-            print("before time_step")
-            time_step(j, nelr, h_old_variables, h_variables, h_step_factors, h_fluxes, block_size_4, rk, var_momentum, var_density, var_density_energy)
+            for j in range(rk):
+                compute_flux(
+                    nelr,
+                    nvar,
+                    h_elements_surrounding_elements,
+                    h_normals,
+                    h_variables,
+                    h_ff_variable,
+                    h_fluxes,
+                    h_ff_flux_contribution_density_energy,
+                    h_ff_flux_contribution_momentum_x,
+                    h_ff_flux_contribution_momentum_y,
+                    h_ff_flux_contribution_momentum_z,
+                    block_size_3,
+                    nnb,
+                    var_density,
+                    var_density_energy,
+                    var_momentum,
+                    gamma)
+                time_step(j, nelr, h_old_variables, h_variables, h_step_factors, h_fluxes, block_size_4, rk, var_momentum, var_density, var_density_energy)
 
-        kernel_end = omp_get_wtime()
+            kernel_end = omp_get_wtime()
 
-    print("before target exit data")
-    with openmp("""target exit data map(from: h_variables) device(1)"""):
-        pass
-
-        ##ifdef OUTPUT
-        #  std::cout << "Saving solution..." << std::endl;
-        #  dump(h_variables, nel, nelr);
-        ##endif
+        #with openmp("""target exit data map(from: h_variables) device(1)"""):
+        #    pass
 
     return kernel_end - kernel_start
 
