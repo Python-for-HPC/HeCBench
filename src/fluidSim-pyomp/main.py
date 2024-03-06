@@ -1,7 +1,9 @@
 import sys
 import random
 import numpy as np
-from numba import njit
+from numba import njit, typeof
+from numba.core.event import RecordingListener, register
+from numba.core import types as numba_types
 from kernels import fluidSim
 import time
 
@@ -214,7 +216,6 @@ def init(dims, u, w, e, h_if0, h_if1234, h_if5678, h_type):
             else:
                 h_type[pos] = False
 
-
 def main():
     if len(sys.argv) != 2:
         print(f"Usage {sys.argv[0]} <iterations>")
@@ -299,16 +300,33 @@ def main():
     t2 = time.perf_counter()
     print("Reference execution time", t2 - t1, "s")
 
+    compile_recorder = RecordingListener()
+    register("numba:compile", compile_recorder)
     # TODO: Fix eager compilation.
-    # t1 = time.perf_counter()
-    # fluidSim.compile(
-    #    """void(
-    #        int64, float64, UniTuple(int64, 2), boolean[:], int64[:], int64[:], float64[:],
-    #        float64[:], float64[:, :], float64[:, :], float64[:], float64[:, :], float64[:, :])"""
-    # )
-    # t2 = time.perf_counter()
-    # print("Compilation time", t2 - t1, "s")
+    t1 = time.perf_counter()
 
+    fluidSim.compile(
+       numba_types.none(
+           typeof(iterations),
+           typeof(omega),
+           typeof(dims),
+           typeof(h_type),
+           typeof(dirX),
+           typeof(dirY),
+           typeof(w),
+           typeof(h_if0),
+           typeof(h_if1234),
+           typeof(h_if5678),
+           typeof(h_of0),
+           typeof(h_of1234),
+           typeof(h_of5678))
+    )
+    t2 = time.perf_counter()
+    print("Compilation time", t2 - t1, "s")
+    print("num compiles:", len(compile_recorder.buffer))
+
+    compile_recorder = RecordingListener()
+    register("numba:compile", compile_recorder)
     t1 = time.perf_counter()
     fluidSim(
         iterations,
@@ -327,6 +345,7 @@ def main():
     )
 
     t2 = time.perf_counter()
+    print("num compiles:", len(compile_recorder.buffer))
     print("Total GPU execution time", t2 - t1, "s")
 
     verify(h_of0, h_of1234, h_of5678, v_of0, v_of1234, v_of5678)
