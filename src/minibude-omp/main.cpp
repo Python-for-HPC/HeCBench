@@ -220,6 +220,69 @@ std::vector<float> runKernel(Params params) {
   FFParams *forcefield = params.forcefield.data();
   float *results = energies.data();
 
+  printf("protein_xyz\n");
+  for (int i = 0; i < 10; ++i) {
+    printf("%f %f %f\n", protein[i].x, protein[i].y, protein[i].z);
+  }
+  printf("protein_type\n");
+  for (int i = 0; i < 10; ++i) {
+    printf("%d ", protein[i].type);
+  }
+  printf("\n");
+  printf("ligand_xyz\n");
+  for (int i = 0; i < 10; ++i) {
+    printf("%f %f %f\n", ligand[i].x, ligand[i].y, ligand[i].z);
+  }
+  printf("ligand_type\n");
+  for (int i = 0; i < 10; ++i) {
+    printf("%d ", ligand[i].type);
+  }
+  printf("\n");
+  printf("transforms 0\n");
+  for (int i = 0; i < 10; ++i) {
+    printf("%f ", transforms_0[i]);
+  }
+  printf("\n");
+  printf("transforms 1\n");
+  for (int i = 0; i < 10; ++i) {
+    printf("%f ", transforms_1[i]);
+  }
+  printf("\n");
+  printf("transforms 2\n");
+  for (int i = 0; i < 10; ++i) {
+    printf("%f ", transforms_2[i]);
+  }
+  printf("\n");
+  printf("transforms 3\n");
+  for (int i = 0; i < 10; ++i) {
+    printf("%f ", transforms_3[i]);
+  }
+  printf("\n");
+  printf("transforms 4\n");
+  for (int i = 0; i < 10; ++i) {
+    printf("%f ", transforms_4[i]);
+  }
+  printf("\n");
+  printf("transforms 5\n");
+  for (int i = 0; i < 10; ++i) {
+    printf("%f ", transforms_5[i]);
+  }
+  printf("\n");
+  printf("forcefield_rhe\n");
+  for (int i = 0; i < params.ntypes; ++i) {
+    printf("%f %f %f\n", forcefield[i].radius, forcefield[i].hphb, forcefield[i].elsc);
+  }
+  printf("forcefield_hbtype\n");
+  for (int i = 0; i < params.ntypes; ++i) {
+    printf("%d ", forcefield[i].hbtype);
+  }
+  printf("\n");
+  printf("nposes: %d\n", params.nposes);
+  printf("wgSize: %d\n", params.wgSize);
+  printf("ntypes: %d\n", params.ntypes);
+  printf("natlig: %d\n", params.natlig);
+  printf("natpro: %d\n", params.natpro);
+  printf("iterations: %d\n", params.iterations);
 #pragma omp target data map(to: protein[0:params.natpro],\
                                 ligand[0:params.natlig],\
                                 transforms_0[0:params.nposes],\

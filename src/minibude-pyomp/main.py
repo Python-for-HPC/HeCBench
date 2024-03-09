@@ -155,8 +155,18 @@ def readFF(path):
 def readPoses(path):
     with open(path, "rb") as binary_file:
         float_array = np.fromfile(binary_file, dtype=np.float32)
-    float_array = float_array.reshape((-1, 6))
-    return float_array
+    #print("float_array:", float_array)
+    falen = float_array.shape[0]
+    assert falen % 6 == 0
+    falen //= 6
+    
+    #float_array = float_array.reshape((-1, 6))
+    new_float_array = np.empty((falen, 6), dtype=float_array.dtype)
+    for i in range(6):
+        new_float_array[:, i] = float_array[i * falen : (i+1) * falen]
+        #new_float_array[:, i] = float_array[i::6]
+    #print("new_float_array:", new_float_array)
+    return new_float_array
 
 
 def loadParameters():
@@ -326,6 +336,26 @@ def runKernel(params):
     forcefield_hbtype = params.forcefield_hbtype
     nposes = params.nposes
 
+    """
+    print("protein_xyz:", protein_xyz)
+    print("protein_type:", protein_type)
+    print("ligand_xyz:", ligand_xyz)
+    print("ligand_type:", ligand_type)
+    print("transforms 0:", transforms_0)
+    print("transforms 1:", transforms_1)
+    print("transforms 2:", transforms_2)
+    print("transforms 3:", transforms_3)
+    print("transforms 4:", transforms_4)
+    print("transforms 5:", transforms_5)
+    print("forcefield_rhe:", forcefield_rhe)
+    print("forcefield_hbtype:", forcefield_hbtype)
+    print("nposes:", nposes)
+    print("wgSize:", params.wgSize)
+    print("ntypes:", params.ntypes)
+    print("natlig:", params.natlig)
+    print("natpro:", params.natpro)
+    print("iterations:", params.iterations)
+    """
     kernelStart, kernelEnd = runKernelInternal(
         protein_xyz,
         protein_type,
@@ -375,7 +405,7 @@ with open(params.deckDir + FILE_REF_ENERGIES) as f:
         e = e[0]
 
         print(f"e {e} energies[{i}] {energies[i]}")
-        input("k")
+        #input("k")
         if abs(e) < 0.1 and abs(energies[i]) < 0.1:
             continue
 

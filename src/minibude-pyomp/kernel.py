@@ -39,9 +39,17 @@ def fasten_main(
 ):
     g_etot = np.empty((teams, block, NUM_TD_PER_THREAD), dtype=np.float32)
     g_lpos = np.empty((teams, block, NUM_TD_PER_THREAD, 3), dtype=np.float32)
-    g_transform = np.empty((teams, block, NUM_TD_PER_THREAD, 4, 3), dtype=np.float32)
-    g_local_forcefield_rhe = np.zeros((teams, 64, 3), dtype=np.float32)
-    g_local_forcefield_hbtype = np.zeros((teams, 64), dtype=np.int32)
+    g_transform = np.empty((teams, block, NUM_TD_PER_THREAD, 3, 4), dtype=np.float32)
+    #g_etot = np.empty((teams, block, NUM_TD_PER_THREAD), dtype=np.float32)
+    #g_lpos = np.empty((teams, block, NUM_TD_PER_THREAD, 3), dtype=np.float32)
+    #g_transform = np.empty((teams, block, NUM_TD_PER_THREAD, 4, 3), dtype=np.float32)
+    g_local_forcefield_rhe = np.zeros((teams, ntypes, 3), dtype=np.float32)
+    g_local_forcefield_hbtype = np.zeros((teams, ntypes), dtype=np.int32)
+    #g_local_forcefield_rhe = np.zeros((teams, 64, 3), dtype=np.float32)
+    #g_local_forcefield_hbtype = np.zeros((teams, 64), dtype=np.int32)
+
+    #print("teams:", teams)
+    #print("NUM_TD_PER_THREAD:", NUM_TD_PER_THREAD)
 
     with openmp(
         """target teams num_teams(teams) thread_limit(block)
@@ -59,6 +67,7 @@ def fasten_main(
 
             ix = gid * lrange * NUM_TD_PER_THREAD + lid
             ix = ix if (ix < nposes) else (nposes - NUM_TD_PER_THREAD)
+            #print("lid:", lid, gid, lrange, ix, ntypes, NUM_TD_PER_THREAD)
 
             for i in range(lid, ntypes, lrange):
                 # local_forcefield_rhe[i, :] = forcefield_rhe[i, :] # See numbaWithOpenmp issue #23.
@@ -66,6 +75,8 @@ def fasten_main(
                 local_forcefield_rhe[i, 1] = forcefield_rhe[i, 1]
                 local_forcefield_rhe[i, 2] = forcefield_rhe[i, 2]
                 local_forcefield_hbtype[i] = forcefield_hbtype[i]
+            #print("local_forcefield_rhe:", local_forcefield_rhe)
+            #print("local_forcefield_hbtype:", local_forcefield_hbtype)
 
             for i in range(NUM_TD_PER_THREAD):
                 index = ix + i * lrange
@@ -76,18 +87,19 @@ def fasten_main(
                 sz = math.sin(transforms_2[index])
                 cz = math.cos(transforms_2[index])
                 transform[i, 0, 0] = cy * cz
-                transform[i, 1, 0] = sx * sy * cz - cx * sz
-                transform[i, 2, 0] = cx * sy * cz + sx * sz
-                transform[i, 3, 0] = transforms_3[index]
-                transform[i, 0, 1] = cy * sz
+                transform[i, 0, 1] = sx * sy * cz - cx * sz
+                transform[i, 0, 2] = cx * sy * cz + sx * sz
+                transform[i, 0, 3] = transforms_3[index]
+                transform[i, 1, 0] = cy * sz
                 transform[i, 1, 1] = sx * sy * sz + cx * cz
-                transform[i, 2, 1] = cx * sy * sz - sx * cz
-                transform[i, 3, 1] = transforms_4[index]
-                transform[i, 0, 2] = sy * -1
-                transform[i, 1, 2] = sx * cy
+                transform[i, 1, 2] = cx * sy * sz - sx * cz
+                transform[i, 1, 3] = transforms_4[index]
+                transform[i, 2, 0] = sy * -1
+                transform[i, 2, 1] = sx * cy
                 transform[i, 2, 2] = cx * cy
-                transform[i, 3, 2] = transforms_5[index]
+                transform[i, 2, 3] = transforms_5[index]
                 etot[i] = 0
+            #print("transform\n", transform)
 
             with openmp("""barrier"""):
                 pass
@@ -98,29 +110,30 @@ def fasten_main(
                 lfindex = ligand_molecule_type[il]
                 l_params_rhe = local_forcefield_rhe[lfindex]
                 l_params_hbtype = local_forcefield_hbtype[lfindex]
-                lhphb_ltz = l_params_rhe[0] < 0.0
-                lhphb_gtz = l_params_rhe[0] > 0.0
+                lhphb_ltz = l_params_rhe[1] < 0.0
+                lhphb_gtz = l_params_rhe[1] > 0.0
                 linitpos = ligand_molecule_xyz[il]
 
                 for i in range(NUM_TD_PER_THREAD):
                     lpos[i, 0] = (
-                        transform[i, 3, 0]
+                        transform[i, 0, 3]
                         + linitpos[0] * transform[i, 0, 0]
-                        + linitpos[1] * transform[i, 1, 0]
-                        + linitpos[2] * transform[i, 2, 0]
+                        + linitpos[1] * transform[i, 0, 1]
+                        + linitpos[2] * transform[i, 0, 2]
                     )
                     lpos[i, 1] = (
-                        transform[i, 3, 1]
-                        + linitpos[0] * transform[i, 0, 1]
+                        transform[i, 1, 3]
+                        + linitpos[0] * transform[i, 1, 0]
                         + linitpos[1] * transform[i, 1, 1]
-                        + linitpos[2] * transform[i, 2, 1]
+                        + linitpos[2] * transform[i, 1, 2]
                     )
                     lpos[i, 2] = (
-                        transform[i, 3, 2]
-                        + linitpos[0] * transform[i, 0, 2]
-                        + linitpos[1] * transform[i, 2, 2]
+                        transform[i, 2, 3]
+                        + linitpos[0] * transform[i, 2, 0]
+                        + linitpos[1] * transform[i, 2, 1]
                         + linitpos[2] * transform[i, 2, 2]
                     )
+                #print("lpos\n", lpos)
 
                 for ip in range(natpro):
                     p_atom_xyz = protein_molecule_xyz[ip]
@@ -140,22 +153,24 @@ def fasten_main(
                     phphb_gtz = p_params_rhe[1] > 0.0
                     phphb_nz = p_params_rhe[1] != 0.0
                     p_hphb = (
-                        p_params_rhe[1] * -1.0
+                        (p_params_rhe[1] * -1.0)
                         if phphb_ltz and lhphb_gtz
-                        else p_params_rhe[1] * 1.0
+                        else (p_params_rhe[1] * 1.0)
                     )
                     l_hphb = (
-                        l_params_rhe[1] * -1.0
+                        (l_params_rhe[1] * -1.0)
                         if phphb_gtz and lhphb_ltz
-                        else l_params_rhe[1] * 1.0
+                        else (l_params_rhe[1] * 1.0)
                     )
                     distdslv = (
-                        5.5 if phphb_ltz else 1.0 if lhphb_ltz else (FLT_MAX * -1)
+                        (5.5 if lhphb_ltz else 1.0) if phphb_ltz else (1.0 if lhphb_ltz else (FLT_MAX * -1))
                     )
                     r_distdslv = 1.0 / distdslv
                     chrg_init = l_params_rhe[2] * p_params_rhe[2]
                     dslv_init = p_hphb + l_hphb
+                    #print("p_hphb:", p_hphb, l_hphb, p_params_rhe[1], phphb_ltz, lhphb_gtz, lhphb_ltz, l_params_rhe[1], distdslv)
 
+                    #print("etot", il, ip, etot[0], end=" ")
                     for i in range(NUM_TD_PER_THREAD):
                         x = lpos[i][0] - p_atom_xyz[0]
                         y = lpos[i][1] - p_atom_xyz[1]
@@ -164,8 +179,9 @@ def fasten_main(
                         distbb = distij - radij
                         zone1 = distbb < 0.0
                         etot[i] += (1.0 - (distij * r_radij)) * (
-                            2 * 38.0 if zone1 else 0.0
+                            (2 * 38.0) if zone1 else 0.0
                         )
+                        #print(etot[i], distij, r_radij, zone1, end=" ")
                         chrg_e = chrg_init * (
                             (1 if zone1 else (1.0 - distbb * elcdst1))
                             * (1 if distbb < elcdst else 0.0)
@@ -173,12 +189,15 @@ def fasten_main(
                         neg_chrg_e = abs(chrg_e) * -1
                         chrg_e = neg_chrg_e if type_E else chrg_e
                         etot[i] += chrg_e * 45.0
+                        #print(etot[i], end=" ")
                         coeff = 1.0 - (distbb * r_distdslv)
                         dslv_e = dslv_init * (
                             1 if distbb < distdslv and phphb_nz else 0.0
                         )
+                        #print("dslv_init", dslv_init, dslv_e, distbb, distdslv, phphb_nz, end=" ")
                         dslv_e *= 1 if zone1 else coeff
                         etot[i] += dslv_e
+                        #print(x, y, z, etot[i], chrg_init, coeff)
 
                 # il += 1
 
@@ -186,3 +205,4 @@ def fasten_main(
             if td_base < nposes:
                 for i in range(NUM_TD_PER_THREAD):
                     etotals[td_base + i * lrange] = etot[i] * 0.5
+            #print("etotals\n", etotals)
