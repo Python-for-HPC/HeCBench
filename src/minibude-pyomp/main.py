@@ -2,18 +2,9 @@ from numba import njit
 from numba.openmp import openmp_context as openmp
 from numba.openmp import (
     omp_get_wtime,
-    omp_set_num_threads,
-    omp_get_num_threads,
-    omp_get_num_devices,
-    omp_is_initial_device,
 )
-import numba
 import math
 import numpy as np
-import time
-import sys
-import os
-import operator
 from functools import reduce
 from kernel import fasten_main
 import argparse
@@ -30,7 +21,6 @@ FILE_PROTEIN = "/protein.in"
 FILE_FORCEFIELD = "/forcefield.in"
 FILE_POSES = "/poses.in"
 FILE_REF_ENERGIES = "/ref_energies.out"
-FLT_MAX = 3.402823466e38
 
 
 class Params:
@@ -120,8 +110,8 @@ def readAtom(path):
             int_list.append(int_data)
 
     # Convert lists to numpy arrays
-    float_array = np.array(float_list)
-    int_array = np.squeeze(np.array(int_list))
+    float_array = np.array(float_list, dtype=np.float32)
+    int_array = np.squeeze(np.array(int_list, dtype=np.int32))
 
     return float_array, int_array
 
@@ -146,8 +136,8 @@ def readFF(path):
             float_list.append(float_data)
 
     # Convert lists to numpy arrays
-    float_array = np.array(float_list)
-    int_array = np.squeeze(np.array(int_list))
+    float_array = np.array(float_list, dtype=np.float32)
+    int_array = np.squeeze(np.array(int_list, np.int32))
 
     return float_array, int_array
 
@@ -155,17 +145,17 @@ def readFF(path):
 def readPoses(path):
     with open(path, "rb") as binary_file:
         float_array = np.fromfile(binary_file, dtype=np.float32)
-    #print("float_array:", float_array)
+    # print("float_array:", float_array)
     falen = float_array.shape[0]
     assert falen % 6 == 0
     falen //= 6
-    
-    #float_array = float_array.reshape((-1, 6))
+
+    # float_array = float_array.reshape((-1, 6))
     new_float_array = np.empty((falen, 6), dtype=float_array.dtype)
     for i in range(6):
-        new_float_array[:, i] = float_array[i * falen : (i+1) * falen]
-        #new_float_array[:, i] = float_array[i::6]
-    #print("new_float_array:", new_float_array)
+        new_float_array[:, i] = float_array[i * falen : (i + 1) * falen]
+        # new_float_array[:, i] = float_array[i::6]
+    # print("new_float_array:", new_float_array)
     return new_float_array
 
 
@@ -246,9 +236,7 @@ def runKernelInternal(
     natlig,
     natpro,
     iterations,
-    FLT_MAX,
 ):
-
     with openmp(
         """target data
         map(to: protein_xyz, protein_type, transforms_0, transforms_1, transforms_2, transforms_3, transforms_4, transforms_5, forcefield_rhe, forcefield_hbtype)
@@ -258,6 +246,7 @@ def runKernelInternal(
         teams = math.ceil(globalo / wgSize)
         block = wgSize
 
+        # warmup
         fasten_main(
             teams,
             block,
@@ -279,7 +268,6 @@ def runKernelInternal(
             forcefield_hbtype,
             results,
             NUM_TD_PER_THREAD,
-            FLT_MAX,
         )
 
         kernelStart = omp_get_wtime()
@@ -305,16 +293,13 @@ def runKernelInternal(
                 forcefield_hbtype,
                 results,
                 NUM_TD_PER_THREAD,
-                FLT_MAX,
             )
         kernelEnd = omp_get_wtime()
-    print("kernelStart", kernelStart)
-    print("kernelEnd", kernelEnd)
     return kernelStart, kernelEnd
 
 
 def runKernel(params):
-    energies = np.zeros(params.nposes)
+    energies = np.empty(params.nposes, dtype=np.float32)
     protein_xyz = params.protein_xyz
     protein_type = params.protein_type
     ligand_xyz = params.ligand_xyz
@@ -376,7 +361,6 @@ def runKernel(params):
         params.natlig,
         params.natpro,
         params.iterations,
-        FLT_MAX,
     )
 
     printTimings(params, elapsedMillis(kernelStart, kernelEnd))
@@ -395,18 +379,19 @@ energies = runKernel(params)
 
 # Validate energies
 if params.nposes > REF_NPOSES:
-    print("Only validing the first {REF_NPOSES} poses.")
+    print("Only validating the first {REF_NPOSES} poses.")
 nRefPoses = REF_NPOSES
 
 maxdiff = np.float32(0.0)
 with open(params.deckDir + FILE_REF_ENERGIES) as f:
     for i in range(nRefPoses):
         e = np.fromfile(f, dtype=np.float32, count=1, sep="\n")
-        e = e[0]
+        e = np.float32(e[0])
 
-        print(f"e {e} energies[{i}] {energies[i]}")
-        #input("k")
-        if abs(e) < 0.1 and abs(energies[i]) < 0.1:
+        if abs(e - energies[i]) >= np.float32(0.01):
+            print(f"ERROR e {e} energies[{i}] {energies[i]}")
+            break
+        if abs(e) < np.float32(1.0) and abs(energies[i]) < np.float32(1.0):
             continue
 
         diff = abs(e - energies[i]) / e
