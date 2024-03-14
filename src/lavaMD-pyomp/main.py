@@ -101,19 +101,6 @@ def core(dim_cpu_boxes1d_arg,
          NUMBER_THREADS,
          par_cpu_alpha):
 
-  # TODO this is a workaround to allocate from global memory scaled to number
-  # of teams, those arrays should be in shared memory for optimization
-  # NOTE: 100 = NUMBER_PAR_PER_BOX
-  rA_shared_v = np.empty((dim_cpu_number_boxes,100), dtype=np.float32)
-  rA_shared_x = np.empty((dim_cpu_number_boxes,100), dtype=np.float32)
-  rA_shared_y = np.empty((dim_cpu_number_boxes,100), dtype=np.float32)
-  rA_shared_z = np.empty((dim_cpu_number_boxes,100), dtype=np.float32)
-  rB_shared_v = np.empty((dim_cpu_number_boxes,100), dtype=np.float32)
-  rB_shared_x = np.empty((dim_cpu_number_boxes,100), dtype=np.float32)
-  rB_shared_y = np.empty((dim_cpu_number_boxes,100), dtype=np.float32)
-  rB_shared_z = np.empty((dim_cpu_number_boxes,100), dtype=np.float32)
-  qB_shared = np.empty((dim_cpu_number_boxes,100), dtype=np.float32)
-
   with openmp("""target data
                    map(to: box_cpu_x,
                            box_cpu_y,
@@ -138,31 +125,18 @@ def core(dim_cpu_boxes1d_arg,
                            fv_cpu_y,
                            fv_cpu_z)
 
-                    map(alloc:
-                          rA_shared_v,
-                          rA_shared_x,
-                          rA_shared_y,
-                          rA_shared_z,
-                          rB_shared_v,
-                          rB_shared_x,
-                          rB_shared_y,
-                          rB_shared_z,
-                          qB_shared)
-
                            device(1)"""):
       kstart = omp_get_wtime()
       with openmp("target teams num_teams(dim_cpu_number_boxes) thread_limit(NUMBER_THREADS) device(1)"):
-        # TODO: allocate using numba cuda interface when in CUDA compilation,
-        # needs fallback for host code.
-        #rA_shared_v = numba.cuda.shared.array(100, dtype=np.float32)
-        #rA_shared_x = numba.cuda.shared.array(100, dtype=np.float32)
-        #rA_shared_y = numba.cuda.shared.array(100, dtype=np.float32)
-        #rA_shared_z = numba.cuda.shared.array(100, dtype=np.float32)
-        #rB_shared_v = numba.cuda.shared.array(100, dtype=np.float32)
-        #rB_shared_x = numba.cuda.shared.array(100, dtype=np.float32)
-        #rB_shared_y = numba.cuda.shared.array(100, dtype=np.float32)
-        #rB_shared_z = numba.cuda.shared.array(100, dtype=np.float32)
-        #qB_shared = numba.cuda.shared.array(100, dtype=np.float32)
+        rA_shared_v = np.empty(100, dtype=np.float32)
+        rA_shared_x = np.empty(100, dtype=np.float32)
+        rA_shared_y = np.empty(100, dtype=np.float32)
+        rA_shared_z = np.empty(100, dtype=np.float32)
+        rB_shared_v = np.empty(100, dtype=np.float32)
+        rB_shared_x = np.empty(100, dtype=np.float32)
+        rB_shared_y = np.empty(100, dtype=np.float32)
+        rB_shared_z = np.empty(100, dtype=np.float32)
+        qB_shared = np.empty(100, dtype=np.float32)
 
         with openmp("parallel"):
           bx = omp_get_team_num()
@@ -183,10 +157,10 @@ def core(dim_cpu_boxes1d_arg,
 
             # home box - shared memory
             while wtx < NUMBER_PAR_PER_BOX:
-              rA_shared_v[bx,wtx] = rv_cpu_v[first_i+wtx]
-              rA_shared_x[bx,wtx] = rv_cpu_x[first_i+wtx]
-              rA_shared_y[bx,wtx] = rv_cpu_y[first_i+wtx]
-              rA_shared_z[bx,wtx] = rv_cpu_z[first_i+wtx]
+              rA_shared_v[wtx] = rv_cpu_v[first_i+wtx]
+              rA_shared_x[wtx] = rv_cpu_x[first_i+wtx]
+              rA_shared_y[wtx] = rv_cpu_y[first_i+wtx]
+              rA_shared_z[wtx] = rv_cpu_z[first_i+wtx]
               wtx += NUMBER_THREADS
             wtx = tx
 
@@ -216,11 +190,11 @@ def core(dim_cpu_boxes1d_arg,
               # (enable the section below only if wanting to use shared memory)
               # nei box - shared memory
               while wtx < NUMBER_PAR_PER_BOX:
-                rB_shared_v[bx,wtx] = rv_cpu_v[first_j+wtx]
-                rB_shared_x[bx,wtx] = rv_cpu_x[first_j+wtx]
-                rB_shared_y[bx,wtx] = rv_cpu_y[first_j+wtx]
-                rB_shared_z[bx,wtx] = rv_cpu_z[first_j+wtx]
-                qB_shared[bx,wtx] = qv_cpu[first_j+wtx]
+                rB_shared_v[wtx] = rv_cpu_v[first_j+wtx]
+                rB_shared_x[wtx] = rv_cpu_x[first_j+wtx]
+                rB_shared_y[wtx] = rv_cpu_y[first_j+wtx]
+                rB_shared_z[wtx] = rv_cpu_z[first_j+wtx]
+                qB_shared[wtx] = qv_cpu[first_j+wtx]
                 wtx += NUMBER_THREADS
               wtx = tx
 
@@ -236,21 +210,21 @@ def core(dim_cpu_boxes1d_arg,
 
                 # loop for the number of particles in the current nei box
                 for j in range(NUMBER_PAR_PER_BOX):
-                  r2 = rA_shared_v[bx,wtx] + rB_shared_v[bx,j] - DOT(rA_shared_x[bx,wtx], rA_shared_y[bx,wtx], rA_shared_z[bx,wtx], rB_shared_x[bx,j], rB_shared_y[bx,j], rB_shared_z[bx,j])
+                  r2 = rA_shared_v[wtx] + rB_shared_v[j] - DOT(rA_shared_x[wtx], rA_shared_y[wtx], rA_shared_z[wtx], rB_shared_x[j], rB_shared_y[j], rB_shared_z[j])
                   u2 = a2*r2
                   u2 = -1.0*u2
                   vij= math.exp(u2)
                   fs = 2*vij
-                  d_x = rA_shared_x[bx,wtx] - rB_shared_x[bx,j]
+                  d_x = rA_shared_x[wtx] - rB_shared_x[j]
                   fxij=fs*d_x
-                  d_y = rA_shared_y[bx,wtx] - rB_shared_y[bx,j]
+                  d_y = rA_shared_y[wtx] - rB_shared_y[j]
                   fyij=fs*d_y
-                  d_z = rA_shared_z[bx,wtx] - rB_shared_z[bx,j]
+                  d_z = rA_shared_z[wtx] - rB_shared_z[j]
                   fzij=fs*d_z
-                  fv_cpu_v[first_i+wtx] += qB_shared[bx,j]*vij
-                  fv_cpu_x[first_i+wtx] += qB_shared[bx,j]*fxij
-                  fv_cpu_y[first_i+wtx] += qB_shared[bx,j]*fyij
-                  fv_cpu_z[first_i+wtx] += qB_shared[bx,j]*fzij
+                  fv_cpu_v[first_i+wtx] += qB_shared[j]*vij
+                  fv_cpu_x[first_i+wtx] += qB_shared[j]*fxij
+                  fv_cpu_y[first_i+wtx] += qB_shared[j]*fyij
+                  fv_cpu_z[first_i+wtx] += qB_shared[j]*fzij
 
                 # increment work thread index
                 wtx += NUMBER_THREADS
