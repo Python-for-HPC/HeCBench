@@ -7,7 +7,6 @@ from numba.openmp import (
 )
 import math
 import numpy as np
-import numba
 
 
 @njit
@@ -33,16 +32,12 @@ def fasten_main(
     etotals,
     NUM_TD_PER_THREAD,
 ):
-    g_etot = np.empty((teams, block, NUM_TD_PER_THREAD), dtype=np.float32)
-    g_lpos = np.empty((teams, block, NUM_TD_PER_THREAD, 3), dtype=np.float32)
-    g_transform = np.empty((teams, block, NUM_TD_PER_THREAD, 3, 4), dtype=np.float32)
-    g_local_forcefield_rhe = np.empty((teams, ntypes, 3), dtype=np.float32)
-    g_local_forcefield_hbtype = np.empty((teams, ntypes), dtype=np.int32)
-
     with openmp(
-        """target teams num_teams(teams) thread_limit(block)
-                map(alloc: g_etot, g_lpos, g_transform, g_local_forcefield_rhe, g_local_forcefield_hbtype) device(1)"""
+        """target teams num_teams(teams) thread_limit(block) device(1)"""
     ):
+        local_forcefield_rhe = np.empty((64, 3), dtype=np.float32)
+        local_forcefield_hbtype = np.empty(64, dtype=np.int32)
+
         with openmp("parallel"):
             # Constants cast to float32 for single-precision arithmetic.
             ZERO = np.float32(0.0)
@@ -61,11 +56,9 @@ def fasten_main(
             gid = omp_get_team_num()
             lrange = omp_get_num_threads()
 
-            etot = g_etot[gid, lid]
-            lpos = g_lpos[gid, lid]
-            transform = g_transform[gid, lid]
-            local_forcefield_rhe = g_local_forcefield_rhe[gid]
-            local_forcefield_hbtype = g_local_forcefield_hbtype[gid]
+            etot = np.empty(1, dtype=np.float32)
+            lpos = np.empty((1, 3), dtype=np.float32)
+            transform = np.empty((1, 3, 4), dtype=np.float32)
 
             if gid * lrange * NUM_TD_PER_THREAD + lid < nposes:
                 ix = gid * lrange * NUM_TD_PER_THREAD + lid
