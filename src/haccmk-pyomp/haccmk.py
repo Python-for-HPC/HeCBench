@@ -176,6 +176,7 @@ def main():
   print("Reference execution time", end-start, "(s)")
 
   print("Running benchmark...")
+  compile()
   haccmk(repeat, n1, n2, fsrrmax2, mp_rsm2, fcoeff, xx,
       yy, zz, mass, vx2_hw, vy2_hw, vz2_hw)
 
@@ -199,6 +200,14 @@ def main():
   print(f"{'FAIL' if error else 'PASS'}")
 
   return 0;
+
+def compile():
+  import time
+  t1 = time.perf_counter()
+  haccmk.compile("""void(int64, int64, int64, float32, float32, float32, Array(float32, 1, 'C', False, aligned=True), Array(float32, 1, 'C', False, aligned=True),
+  Array(float32, 1, 'C', False, aligned=True), Array(float32, 1, 'C', False, aligned=True), Array(float32, 1, 'C', False, aligned=True), Array(float32, 1, 'C', False, aligned=True), Array(float32, 1, 'C', False, aligned=True))""")
+  t2 = time.perf_counter()
+  print("ctime", t2-t1, "s")
 
 if __name__ == "__main__":
     main()

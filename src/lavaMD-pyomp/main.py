@@ -1,7 +1,6 @@
 from numba import njit
 from numba.openmp import openmp_context as openmp
 from numba.openmp import omp_get_wtime, omp_set_num_threads, omp_get_num_threads, omp_get_num_devices, omp_is_initial_device, omp_get_team_num, omp_get_thread_num, omp_get_num_teams
-import numba
 import numpy as np
 import sys
 import math
@@ -10,11 +9,11 @@ import math
 
 DEBUG = False
 
-@numba.njit
+@njit
 def DOT(A_x, A_y, A_z, B_x, B_y, B_z):
     return ((A_x)*(B_x)+(A_y)*(B_y)+(A_z)*(B_z)) # STABLE
 
-@numba.njit
+@njit
 def init_box(dim_cpu_boxes1d_arg,
              box_cpu_x,
              box_cpu_y,
@@ -75,7 +74,7 @@ def init_box(dim_cpu_boxes1d_arg,
         # increment home box
         nh += 1
 
-@numba.njit
+@njit
 def core(dim_cpu_boxes1d_arg,
          dim_cpu_number_boxes,
          box_cpu_x,
@@ -380,6 +379,7 @@ def main():
   fv_cpu_y = np.zeros(dim_cpu_space_elem, dtype=np.float32)
   fv_cpu_z = np.zeros(dim_cpu_space_elem, dtype=np.float32)
 
+  compile()
   start = omp_get_wtime()
   core(dim_cpu_boxes1d_arg,
        dim_cpu_number_boxes,
@@ -415,6 +415,36 @@ def main():
       print(f"g= {g} {fv_cpu_v[offset+g]:.6f} {fv_cpu_x[offset+g]:.6f} {fv_cpu_y[offset+g]:.6f} {fv_cpu_z[offset+g]:.6f}")
 
   sys.exit(0)
+
+
+def compile():
+  import time
+  t1 = time.perf_counter()
+  core.compile("""(int64, int64,
+      Array(int64, 1, 'C', False, aligned=True),
+      Array(int64, 1, 'C', False, aligned=True),
+      Array(int64, 1, 'C', False, aligned=True),
+      Array(int64, 1, 'C', False, aligned=True),
+      Array(int64, 1, 'C', False, aligned=True),
+      Array(int64, 1, 'C', False, aligned=True),
+      Array(int64, 2, 'C', False, aligned=True),
+      Array(int64, 2, 'C', False, aligned=True),
+      Array(int64, 2, 'C', False, aligned=True),
+      Array(int64, 2, 'C', False, aligned=True),
+      Array(int64, 2, 'C', False, aligned=True),
+      Array(float32, 1, 'C', False, aligned=True),
+      Array(float32, 1, 'C', False, aligned=True),
+      Array(float32, 1, 'C', False, aligned=True),
+      Array(float32, 1, 'C', False, aligned=True),
+      Array(float32, 1, 'C', False, aligned=True),
+      Array(float32, 1, 'C', False, aligned=True),
+      Array(float32, 1, 'C', False, aligned=True),
+      Array(float32, 1, 'C', False, aligned=True),
+      Array(float32, 1, 'C', False, aligned=True),
+      int64, int64, float64)""")
+  t2 = time.perf_counter()
+  print("ctime", t2 - t1, "s");
+
 
 if __name__ == "__main__":
   main()

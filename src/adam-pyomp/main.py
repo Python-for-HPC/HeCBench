@@ -151,6 +151,7 @@ def main():
   mode = ADAM_MODE_0
 
   # Execute on device.
+  compile()
   core(
         repeat,
         p, m, v, g,
@@ -200,6 +201,16 @@ def main():
   print("PASS" if ok else "FAIL")
 
   return 0
+
+def compile():
+  import time
+  t1 = time.perf_counter()
+  core.compile("""void(int64, Array(float32, 1, 'C', False, aligned=True),
+  Array(float32, 1, 'C', False, aligned=True), Array(float32, 1, 'C', False,
+  aligned=True), Array(float32, 1, 'C', False, aligned=True), float32, float32,
+  float32, float32, float32, int64, int64, int64, float32)""")
+  t2 = time.perf_counter()
+  print("ctime", t2 - t1, "s")
 
 
 if __name__ == "__main__":

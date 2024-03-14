@@ -188,6 +188,7 @@ def main():
 
     tCopy = copy.deepcopy(tIn)
 
+    compile()
     print("Running benchmark...")
     total_start = omp_get_wtime()
 
@@ -208,6 +209,18 @@ def main():
 
     print("Writing output...")
     writeoutput(tOut, numRows, numCols, layers, ofile)
+
+def compile():
+  import time
+  t1 = time.perf_counter()
+  core.compile("""(int64, int64, int64, int64,
+      float32, float32, float32, float32, float32, float32, float32, float32,
+      Array(float32, 1, 'C', False, aligned=True),
+      Array(float32, 1, 'C', False, aligned=True),
+      Array(float32, 1, 'C', False, aligned=True),
+      Array(float32, 1, 'C', False, aligned=True))""")
+  t2 = time.perf_counter()
+  print("ctime", t2 - t1, "s")
 
 if __name__ == "__main__":
     main()
