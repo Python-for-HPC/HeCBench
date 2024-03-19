@@ -9,7 +9,7 @@ import math
 ADAM_MODE_0 = 0
 ADAM_MODE_1 = 1
 
-@njit
+@njit(fastmath=True)
 def adam(
     p,
     m,
