@@ -141,8 +141,8 @@ def setup():
     parser.add_argument('-t', type=float, default=0.001, help="threshold value")
     parser.add_argument('-l', type=int, default=1, help="iteration for each number of clusters")
     parser.add_argument('-b', type=bool, default=False, help="input file in binary format")
-    parser.add_argument('-r', type=bool, default=False, help="calculate RMSE")
-    parser.add_argument('-o', type=bool, default=False, help="output cluster center coordinates")
+    parser.add_argument('-r', action='store_true', default=False, help="calculate RMSE")
+    parser.add_argument('-o', action='store_true', default=False, help="output cluster center coordinates")
     cargs = parser.parse_args()
 
     npoints = 0
