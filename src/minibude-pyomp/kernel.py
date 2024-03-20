@@ -32,8 +32,14 @@ def fasten_main(
     etotals,
     NUM_TD_PER_THREAD,
 ):
+    # NOTE: We need to set launch bounds because minibude requires 256
+    # computation threads for correct calculation. An extra complication is
+    # that the OpenMP target runtime sets aside 1 warp (32 threads) for
+    # sequential execution in GENERIC execution mode (not SIMD), so we must set
+    # launch bounds to 256+32 to have 256 COMPUTATION threads that are
+    # necessary for minibude.
     with openmp(
-        """target teams num_teams(teams) thread_limit(block) device(1)"""
+        """target teams num_teams(teams) thread_limit(block) device(1) ompx_attribute(launch_bounds(288))"""
     ):
         local_forcefield_rhe = np.empty((64, 3), dtype=np.float32)
         local_forcefield_hbtype = np.empty(64, dtype=np.int32)
@@ -60,12 +66,8 @@ def fasten_main(
             lpos = np.empty((1, 3), dtype=np.float32)
             transform = np.empty((1, 3, 4), dtype=np.float32)
 
-            if gid * lrange * NUM_TD_PER_THREAD + lid < nposes:
-                ix = gid * lrange * NUM_TD_PER_THREAD + lid
-            else:
-                ix = nposes - NUM_TD_PER_THREAD
-            # ix = gid * lrange * NUM_TD_PER_THREAD + lid
-            # ix = ix if (ix < nposes) else (nposes - NUM_TD_PER_THREAD)
+            ix = np.int32(gid * lrange * NUM_TD_PER_THREAD + lid)
+            ix = ix if (ix < nposes) else np.int32(nposes - NUM_TD_PER_THREAD)
             # print("lid:", lid, gid, lrange, ix, ntypes, NUM_TD_PER_THREAD)
 
             for i in range(lid, ntypes, lrange):

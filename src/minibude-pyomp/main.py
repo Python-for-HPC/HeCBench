@@ -9,12 +9,12 @@ from functools import reduce
 from kernel import fasten_main
 import argparse
 
-DEFAULT_ITERS = 8
-DEFAULT_NPOSES = 65536
-REF_NPOSES = 65536
-DEFAULT_PPWI = 1
-DEFAULT_WGSIZE = 4
-NUM_TD_PER_THREAD = DEFAULT_PPWI
+DEFAULT_ITERS = np.int32(8)
+DEFAULT_NPOSES = np.int32(65536)
+REF_NPOSES = np.int32(65536)
+DEFAULT_PPWI = np.int32(1)
+DEFAULT_WGSIZE = np.int32(4)
+NUM_TD_PER_THREAD = np.int32(DEFAULT_PPWI)
 DATA_DIR = "../../../miniBUDE/data/bm1"
 FILE_LIGAND = "/ligand.in"
 FILE_PROTEIN = "/protein.in"
@@ -25,10 +25,10 @@ FILE_REF_ENERGIES = "/ref_energies.out"
 
 class Params:
     def __init__(self):
-        self.natlig = 0
-        self.natpro = 0
-        self.ntypes = 0
-        self.nposes = 0
+        self.natlig = np.int32(0)
+        self.natpro = np.int32(0)
+        self.ntypes = np.int32(0)
+        self.nposes = np.int32(0)
         self.protein_xyz = None
         self.protein_type = None
         self.ligand_xyz = None
@@ -36,8 +36,8 @@ class Params:
         self.forcefield_hbtype = None
         self.forcefield_rhe = None
         self.poses = None
-        self.iterations = 0
-        self.wgSize = 0
+        self.iterations = np.int32(0)
+        self.wgSize = np.int32(0)
         self.deckDir = ""
 
     def __str__(self):
@@ -355,12 +355,12 @@ def runKernel(params):
         forcefield_rhe,
         forcefield_hbtype,
         energies,
-        nposes,
-        params.wgSize,
-        params.ntypes,
-        params.natlig,
-        params.natpro,
-        params.iterations,
+        np.int32(nposes),
+        np.int32(params.wgSize),
+        np.int32(params.ntypes),
+        np.int32(params.natlig),
+        np.int32(params.natpro),
+        np.int32(params.iterations),
     )
 
     printTimings(params, elapsedMillis(kernelStart, kernelEnd))
