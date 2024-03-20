@@ -70,14 +70,14 @@ def get_dataframe(result_dir, bench_name):
     cat_df = pd.concat((cat_df, df))
     return cat_df
 
-def plot_exetimes(result_dir, benchmark, df):
+def plot_exetimes(output_dir, benchmark, df, legend):
     print("Plot exetimes...")
     # Drop rows of memcpy data tranfers (HtoD or DtoH).
     df = df[~df.Name.str.contains("Memcpy")]
     df = df[["Name", "Duration", "Version", "Rep"]].astype({"Duration": float})
     res = df.drop("Rep", axis=1).groupby(["Name", "Version"]).mean().unstack()
     res.columns = res.columns.droplevel(0)
-    ax = res.plot.bar(width=0.6)
+    ax = res.plot.bar(width=0.6, legend=legend)
     ax.set_title(benchmark["name"])
     #ax.set_yscale("log", base=2)
     #ax.yaxis.set_major_formatter(ScalarFormatter())
@@ -86,43 +86,45 @@ def plot_exetimes(result_dir, benchmark, df):
     ax.set_xlabel("")
     labels = ax.get_xticklabels()
     ax.set_xticklabels(labels, rotation=0)
-    ax.get_legend().set_title("")
+    #ax.get_legend().set_title("")
     for container in ax.containers:
         ax.bar_label(container, fmt="%.2f")
     plt.tight_layout()
-    plt.savefig(result_dir / f"exetime-{benchmark['name']}.pdf")
+    plt.savefig(output_dir / f"exetime-{benchmark["name"]}.pdf")
     plt.close()
 
-def plot_memcpy_times(result_dir, benchmark, df):
+def plot_memcpy_times(output_dir, benchmark, df, legend):
     print("Plot memcpy times...")
     # Keep only rows of memcpy data tranfers (HtoD or DtoH).
     df = df[df.Name.str.contains("Memcpy")]
     df = df[["Name", "Duration", "Version", "Rep"]].astype({"Duration": float})
+    # Convert to ms
+    df.Duration = df.Duration / 1000.0
     res = df.drop("Rep", axis=1).groupby(["Name", "Version"]).sum().unstack()
     res.columns = res.columns.droplevel(0)
-    ax = res.plot.bar(width=0.6)
+    ax = res.plot.bar(width=0.6, legend=legend)
     ax.set_title(benchmark["name"])
     ax.set_yscale("log", base=2)
     ax.yaxis.set_major_formatter(ScalarFormatter())
-    ax.set_ylabel("Time (us)\n$log_2$")
+    ax.set_ylabel("Time (ms)\n$log_2$")
     ax.set_xlabel("")
     labels = ax.get_xticklabels()
     ax.set_xticklabels(labels, rotation=0)
-    ax.get_legend().set_title("")
+    #ax.get_legend().set_title("")
     for container in ax.containers:
         ax.bar_label(container, fmt="%.2f")
     plt.tight_layout()
-    plt.savefig(result_dir / f"memcpy-times-{benchmark['name']}.pdf")
+    plt.savefig(output_dir / f"memcpy-times-{benchmark['name']}.pdf")
     plt.close()
 
-def plot_memcpy_size(result_dir, benchmark, df):
+def plot_memcpy_size(output_dir, benchmark, df, legend):
     print("Plot memcpy size...")
     # Keep only rows of memcpy data tranfers (HtoD or DtoH).
     df = df[df.Name.str.contains("Memcpy")]
     df = df[["Name", "Size", "Version", "Rep"]].astype({"Size": float})
     res = df.drop("Rep", axis=1).groupby(["Name", "Version"]).sum().unstack()
     res.columns = res.columns.droplevel(0)
-    ax = res.plot.bar(width=0.6)
+    ax = res.plot.bar(width=0.6, legend=legend)
     ax.set_title(benchmark["name"])
     ax.set_yscale("log", base=2)
     ax.yaxis.set_major_formatter(ScalarFormatter())
@@ -130,20 +132,20 @@ def plot_memcpy_size(result_dir, benchmark, df):
     ax.set_xlabel("")
     labels = ax.get_xticklabels()
     ax.set_xticklabels(labels, rotation=0)
-    ax.get_legend().set_title("")
+    #ax.get_legend().set_title("")
     for container in ax.containers:
-        ax.bar_label(container, fmt="%.2f")
+        ax.bar_label(container, fmt="%.2f", rotation=-30)
     plt.tight_layout()
-    plt.savefig(result_dir / f"memcpy-size-{benchmark['name']}.pdf")
+    plt.savefig(output_dir / f"memcpy-size-{benchmark['name']}.pdf")
     plt.close()
 
-def plot_reg_usage(result_dir, benchmark, df):
+def plot_reg_usage(output_dir, benchmark, df, legend):
     print("Plot register usage...")
     df = df[["Name", "Registers Per Thread", "Version", "Rep"]
             ].dropna().astype({"Registers Per Thread": int})
     res = df.drop("Rep", axis=1).groupby(["Name", "Version"]).mean().unstack()
     res.columns = res.columns.droplevel(0)
-    ax = res.plot.bar(width=0.6)
+    ax = res.plot.bar(width=0.6, legend=legend)
     ax.set_title(benchmark["name"])
     ax.set_xlabel("")
     ax.set_ylabel("Number of registers")
@@ -152,23 +154,22 @@ def plot_reg_usage(result_dir, benchmark, df):
     for container in ax.containers:
         ax.bar_label(container)
     plt.tight_layout()
-    plt.savefig(result_dir / f"registers-{benchmark['name']}.pdf")
+    plt.savefig(output_dir / f"registers-{benchmark['name']}.pdf")
     plt.close()
 
-def plot_ctimes(result_dir, benchmark):
+def plot_ctimes(output_dir, benchmark, df, legend):
     print("Plot ctimes ...")
-    data = result_dir / f"{benchmark['name']}" / f"ctimes-{benchmark['name']}.csv"
-    df = pd.read_csv(data)
     res = df.groupby("Version").mean()
     #res.T.apply(print)
     # Plot transpose to make Version a column (differently colored bars).
-    ax = res.T.plot.bar(width=0.6)
+    ax = res.T.plot.bar(width=0.6, legend=legend)
     ax.set_title(benchmark["name"])
     ax.set_ylabel("Time (s)")
+    ax.set_xticklabels([benchmark["name"]], rotation=0)
     for container in ax.containers:
         ax.bar_label(container, fmt="%.2f")
     plt.tight_layout()
-    plt.savefig(result_dir / f"ctime-{benchmark['name']}.pdf")
+    plt.savefig(output_dir / f"ctime-{benchmark['name']}.pdf")
     plt.close()
 
 def main():
@@ -178,6 +179,8 @@ def main():
     parser.add_argument("-i", "--input", help="input configuration file", required=True)
     parser.add_argument("-r", "--result-dir",
                         help="path to the results directory", required=True)
+    parser.add_argument("-o", "--output-dir",
+                        help="path to output directory", required=True)
     parser.add_argument(
         "-b", "--benchmarks", help="list of benchmarks to process", nargs="+"
     )
@@ -208,31 +211,45 @@ def main():
     )
     assert len(benchmarks_to_process) >= 1, "Expected at least 1 benchmark to process"
 
+    # Matplotlib setup.
+    plt.rcParams.update({'font.size': 18})
+    plt.rcParams["axes.spines.right"] = False
+    plt.rcParams["axes.spines.top"] = False
+    plt.rcParams["figure.figsize"] = (8,4)
+    #ax.spines[['right', 'top']].set_visible(False)
+
+    legend = True
     for benchmark in benchmarks_to_process:
         result_dir = Path(args.result_dir)
+        output_dir = Path(args.output_dir)
         print(f"\N{rocket} => Processing {benchmark['name']}...")
 
         # Plot execution times.
         if args.plot_exetimes:
-            plot_exetimes(result_dir, benchmark,
-                          get_dataframe(result_dir, benchmark["name"]))
+            plot_exetimes(output_dir, benchmark,
+                          get_dataframe(result_dir, benchmark["name"]), legend)
 
         if args.plot_memcpy_times:
-            plot_memcpy_times(result_dir, benchmark, get_dataframe(
-                result_dir, benchmark["name"]))
+            plot_memcpy_times(output_dir, benchmark, get_dataframe(
+                result_dir, benchmark["name"]), legend)
 
         if args.plot_memcpy_size:
-            plot_memcpy_size(result_dir, benchmark, get_dataframe(
-                result_dir, benchmark["name"]))
+            plot_memcpy_size(output_dir, benchmark, get_dataframe(
+                result_dir, benchmark["name"]), legend)
 
         # Plot register usage.
         if args.plot_reg_usage:
-            plot_reg_usage(result_dir, benchmark, get_dataframe(
-                result_dir, benchmark["name"]))
+            plot_reg_usage(output_dir, benchmark, get_dataframe(
+                result_dir, benchmark["name"]), legend)
 
         # Plot compilation times.
         if args.plot_ctimes:
-            plot_ctimes(result_dir, benchmark)
+            data = result_dir / f"{benchmark['name']}" / f"ctimes-{benchmark['name']}.csv"
+            df = pd.read_csv(data)
+            plot_ctimes(output_dir, benchmark, df, legend)
+
+        # Print legend only on the first plot.
+        legend = False
 
 
 

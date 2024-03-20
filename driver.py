@@ -18,7 +18,7 @@ def c_compile(benchmark):
         subprocess.run("make -f Makefile.lassen",
                        shell=True, cwd=cwd, check=True)
     # warmup
-    print("Warmup...")
+    print("Warmup build...")
     clean()
     build()
 
@@ -42,7 +42,7 @@ def py_compile(benchmark):
         return p
 
     # warmup
-    print("Warmup...")
+    print("Warmup run...")
     build()
     print(f"\N{gear} => Compile {cwd}...")
     p = build()
@@ -51,40 +51,41 @@ def py_compile(benchmark):
     return ctime
 
 
-def run(rep, version, argkey, benchmark, metrics):
+def run(outdir, rep, version, argkey, benchmark, metrics, force):
     exe = ("python " if version == "pyomp" else "") + str(
         Path.cwd() /
         f"src/{benchmark['name']}-{version}/{benchmark['exe'][version]}")
 
-    cwd = Path.cwd() / f"results/pyomp/{benchmark['name']}"
+    cwd = Path(f"{outdir}") / benchmark['name']
     Path(cwd).mkdir(parents=True, exist_ok=True)
 
-    def run_internal(cmd):
-        subprocess.run(cmd, shell=True, cwd=cwd, check=True)
-
-    cmd = exe + " " + benchmark["inputs"][argkey]
-    # Warmup
-    print("Warmup...")
-    run_internal(cmd)
-
-    # Run through nvrpof, collect detailed metrics if enabled.
     tracefile = (
         f"nvprof-metrics-{version}-{benchmark['name']}-{argkey}-{rep}.csv"
         if metrics else
         f"nvprof-{version}-{benchmark['name']}-{argkey}-{rep}.csv")
 
+    check = cwd / tracefile
+    if not force:
+        if check.exists():
+            print(
+                f"\u26A0\uFE0F WARNING: tracefile {tracefile} exists, will not re-run"
+            )
+            return
+
+    def run_internal(cmd):
+        subprocess.run(cmd, shell=True, cwd=cwd, check=True)
+
+    # Warmup
+    cmd = exe + " " + benchmark["inputs"][argkey]
+    print("Warmup...")
+    run_internal(cmd)
+
+    # Run through nvrpof, collect detailed metrics if enabled.
     cmd = (
         f"nvprof --print-gpu-trace --normalized-time-unit us --csv --log-file {tracefile} "
         + ("--metrics all " if metrics else "") + cmd )
 
     print(f"\N{rocket} => Run cmd {cmd}")
-    check = cwd / tracefile
-    if check.exists():
-        print(
-            f"\u26A0\uFE0F WARNING: tracefile {tracefile} exists, will not re-run"
-        )
-        return
-
     run_internal(cmd)
 
 
@@ -95,6 +96,10 @@ def main():
                         "--input",
                         help="input configuration file",
                         required=True)
+    parser.add_argument("-o",
+                        "--output-dir",
+                        help="output directory",
+                        required=True)
     parser.add_argument("-r",
                         "--repeats",
                         help="experiment repeats",
@@ -104,6 +109,10 @@ def main():
                         "--benchmarks",
                         help="list of benchmarks to run",
                         nargs="+")
+    parser.add_argument("-f",
+                        "--force",
+                        help="force re-running",
+                        action="store_true")
     parser.add_argument(
         "-m",
         "--metrics",
@@ -112,13 +121,6 @@ def main():
     )
     args = parser.parse_args()
 
-    print("=== Run description ===")
-    print("Input", args.input)
-    print("Repeats", args.repeats)
-    print("Benchmarks", args.benchmarks)
-    print("Metrics", args.metrics)
-    print("=======================")
-
     with open(args.input, "r") as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
 
@@ -126,6 +128,14 @@ def main():
         b for b in config["benchmarks"] if b["name"] in args.benchmarks
     ] if args.benchmarks else config["benchmarks"])
     assert len(benchmarks_to_run) >= 1, "Expected at least 1 benchmark to run"
+
+    print("=== Run description ===")
+    print("Input", args.input)
+    print("Repeats", args.repeats)
+    print("Benchmarks", [b["name"] for b in benchmarks_to_run])
+    print("Metrics", args.metrics)
+    print("Force", args.force)
+    print("=======================")
 
     for benchmark in benchmarks_to_run:
         assert len(benchmark["inputs"]) == 1, "Expected single input"
@@ -136,12 +146,14 @@ def main():
         for rep in range(args.repeats):
             # Run C openmp
             ctimes.append(["omp", c_compile(benchmark)])
-            run(rep, "omp", "default", benchmark, args.metrics)
+            #run(args.output_dir, rep, "omp", "default",
+            #    benchmark, args.metrics, args.force)
             # Run PyOMP
             ctimes.append(["pyomp", py_compile(benchmark)])
-            run(rep, "pyomp", "default", benchmark, args.metrics)
+            #run(args.output_dir, rep, "pyomp", "default",
+            #    benchmark, args.metrics, args.force)
 
-        ctimes_outfn = Path.cwd() / f"results/pyomp/{benchmark['name']}" / f"ctimes-{benchmark['name']}.csv"
+        ctimes_outfn = Path(f"{args.output_dir}/{benchmark['name']}") / f"ctimes-{benchmark['name']}.csv"
         with open(ctimes_outfn, "w") as f:
             cw = csv.writer(f, delimiter=",")
             cw.writerow(["Version", "Ctime"])
