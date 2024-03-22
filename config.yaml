@@ -19,13 +19,19 @@ benchmarks:
       pyomp: haccmk.py
   - name: hotspot3D
     inputs:
-      default: "512 8 5000 ../../../data/hotspot3D/power_512x8 ../../../data/hotspot3D/temp_512x8 /dev/null"
+      default: "512 8 5000 $ROOT/data/hotspot3D/power_512x8 $ROOT/data/hotspot3D/temp_512x8 /dev/null"
     exe:
       omp: main
       pyomp: hotspot3d.py
   - name: lavaMD
     inputs:
       default: "-boxes1d 30"
+    exe:
+      omp: main
+      pyomp: main.py
+  - name: minibude
+    inputs:
+      default: "--deck $ROOT/data/minibude/data/bm1 --wgsize 256 --iterations 100"
     exe:
       omp: main
       pyomp: main.py

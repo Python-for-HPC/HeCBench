@@ -29,6 +29,8 @@
 #define FILE_POSES        "/poses.in"
 #define FILE_REF_ENERGIES "/ref_energies.out"
 
+#define DEBUG 0
+
 struct __attribute__((__packed__)) Atom {
   float x, y, z;
   int32_t type;

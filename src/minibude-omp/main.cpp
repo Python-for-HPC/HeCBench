@@ -73,7 +73,7 @@ void printTimings(const Params &params, double millis) {
   double runtime = ms * 1e-3;
 
   // Compute FLOP/s
-  double ops_per_wg = NUM_TD_PER_THREAD * 27 + params.natlig * (3 + NUM_TD_PER_THREAD * 18 + 
+  double ops_per_wg = NUM_TD_PER_THREAD * 27 + params.natlig * (3 + NUM_TD_PER_THREAD * 18 +
       params.natpro * (11 + NUM_TD_PER_THREAD * 30)) + NUM_TD_PER_THREAD;
   double total_ops = ops_per_wg * ((double) params.nposes / NUM_TD_PER_THREAD);
   double flops = total_ops / runtime;
@@ -220,6 +220,7 @@ std::vector<float> runKernel(Params params) {
   FFParams *forcefield = params.forcefield.data();
   float *results = energies.data();
 
+#if DEBUG
   printf("protein_xyz\n");
   for (int i = 0; i < 10; ++i) {
     printf("%f %f %f\n", protein[i].x, protein[i].y, protein[i].z);
@@ -283,6 +284,7 @@ std::vector<float> runKernel(Params params) {
   printf("natlig: %d\n", params.natlig);
   printf("natpro: %d\n", params.natpro);
   printf("iterations: %d\n", params.iterations);
+#endif
 #pragma omp target data map(to: protein[0:params.natpro],\
                                 ligand[0:params.natlig],\
                                 transforms_0[0:params.nposes],\
@@ -397,7 +399,7 @@ int main(int argc, char *argv[]) {
     if (diff > maxdiff) maxdiff = diff;
   }
   std::cout << "Largest difference was " <<
-    std::setprecision(3) << (100 * maxdiff) << "%.\n\n"; 
+    std::setprecision(3) << (100 * maxdiff) << "%.\n\n";
   // Expect numbers to be accurate to 2 decimal places
   refEnergies.close();
 

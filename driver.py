@@ -18,11 +18,11 @@ def c_compile(benchmark):
         subprocess.run("make -f Makefile.lassen",
                        shell=True, cwd=cwd, check=True)
     # warmup
-    print("Warmup build...")
+    print(f"\N{fire} Warmup build C version...")
     clean()
     build()
 
-    print(f"\N{gear} => Compile {cwd}...")
+    print(f"\N{gear} => Compile C version {cwd}...")
     clean()
     t1 = time.perf_counter()
     build()
@@ -42,9 +42,9 @@ def py_compile(benchmark):
         return p
 
     # warmup
-    print("Warmup run...")
+    print(f"\N{fire} Warmup build pyomp...")
     build()
-    print(f"\N{gear} => Compile {cwd}...")
+    print(f"\N{gear} => Compile pyomp {cwd}...")
     p = build()
     stdout = str(p.stdout)
     ctime = float(stdout.split()[1])
@@ -57,7 +57,6 @@ def run(outdir, rep, version, argkey, benchmark, metrics, force):
         f"src/{benchmark['name']}-{version}/{benchmark['exe'][version]}")
 
     cwd = Path(f"{outdir}") / benchmark['name']
-    Path(cwd).mkdir(parents=True, exist_ok=True)
 
     tracefile = (
         f"nvprof-metrics-{version}-{benchmark['name']}-{argkey}-{rep}.csv"
@@ -76,8 +75,10 @@ def run(outdir, rep, version, argkey, benchmark, metrics, force):
         subprocess.run(cmd, shell=True, cwd=cwd, check=True)
 
     # Warmup
-    cmd = exe + " " + benchmark["inputs"][argkey]
-    print("Warmup...")
+    # NOTE: We assume driver runs always at the HeCBench root path.
+    input_str = benchmark["inputs"][argkey].replace("$ROOT", str(Path.cwd()))
+    cmd = exe + " " + input_str
+    print(f"\N{fire} Warmup run {version}...")
     run_internal(cmd)
 
     # Run through nvrpof, collect detailed metrics if enabled.
@@ -142,16 +143,19 @@ def main():
         assert (list(benchmark["inputs"])[0] == "default"
                 ), "Expected only default hecbench input"
 
+        cwd = Path(f"{args.output_dir}") / benchmark["name"]
+        cwd.mkdir(parents=True, exist_ok=True)
+
         ctimes = []
         for rep in range(args.repeats):
             # Run C openmp
             ctimes.append(["omp", c_compile(benchmark)])
-            #run(args.output_dir, rep, "omp", "default",
-            #    benchmark, args.metrics, args.force)
+            run(args.output_dir, rep, "omp", "default",
+                benchmark, args.metrics, args.force)
             # Run PyOMP
             ctimes.append(["pyomp", py_compile(benchmark)])
-            #run(args.output_dir, rep, "pyomp", "default",
-            #    benchmark, args.metrics, args.force)
+            run(args.output_dir, rep, "pyomp", "default",
+                benchmark, args.metrics, args.force)
 
         ctimes_outfn = Path(f"{args.output_dir}/{benchmark['name']}") / f"ctimes-{benchmark['name']}.csv"
         with open(ctimes_outfn, "w") as f:

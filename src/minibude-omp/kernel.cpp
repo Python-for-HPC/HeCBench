@@ -35,12 +35,12 @@ void fasten_main(
     const float *__restrict transforms_4,
     const float *__restrict transforms_5,
     const FFParams *__restrict forcefield,
-    float *__restrict etotals) 
+    float *__restrict etotals)
 {
   #pragma omp target teams num_teams(teams) thread_limit(block)
   {
     FFParams local_forcefield[64];  // size dependent on the input data (deck)
-    #pragma omp parallel 
+    #pragma omp parallel
     {
       const size_t lid = omp_get_thread_num();
       const size_t gid = omp_get_team_num();
@@ -53,15 +53,19 @@ void fasten_main(
       size_t ix = gid * lrange * NUM_TD_PER_THREAD + lid;
       ix = ix < nposes ? ix : nposes - NUM_TD_PER_THREAD;
 
-      printf("lid %d %d %d %d %d %d\n", lid, gid, lrange, ix, ntypes, NUM_TD_PER_THREAD);
       for (int i = lid; i < ntypes; i += lrange) local_forcefield[i] = forcefield[i];
+#if DEBUG
+      printf("lid %d %d %d %d %d %d\n", lid, gid, lrange, ix, ntypes,
+             NUM_TD_PER_THREAD);
       for (int i = 0; i < ntypes; ++i) {
-          printf("%f %f %f\n", local_forcefield[i].radius, local_forcefield[i].hphb, local_forcefield[i].elsc);
+        printf("%f %f %f\n", local_forcefield[i].radius,
+               local_forcefield[i].hphb, local_forcefield[i].elsc);
       }
       for (int i = 0; i < ntypes; ++i) {
-          printf("%d ", local_forcefield[i].hbtype);
+        printf("%d ", local_forcefield[i].hbtype);
       }
       printf("\n");
+#endif
 
       // Compute transformation matrix to private memory
       for (size_t i = 0; i < NUM_TD_PER_THREAD; i++) {
@@ -89,12 +93,15 @@ void fasten_main(
 
         etot[i] = ZERO;
       }
+#if DEBUG
       printf("transform\n");
       for (int i = 0; i < NUM_TD_PER_THREAD; ++i) {
-          for (int j = 0; j < 3; ++j) {
-              printf("%f %f %f %f\n", transform[i][j].x, transform[i][j].y, transform[i][j].z, transform[i][j].w);
-          }
+        for (int j = 0; j < 3; ++j) {
+          printf("%f %f %f %f\n", transform[i][j].x, transform[i][j].y,
+                 transform[i][j].z, transform[i][j].w);
+        }
       }
+#endif
 
       #pragma omp barrier
 
@@ -123,10 +130,12 @@ void fasten_main(
             linitpos.y * transform[i][2].y +
             linitpos.z * transform[i][2].z;
         }
+#if DEBUG
         printf("lpos\n");
         for (int i = 0; i < NUM_TD_PER_THREAD; ++i) {
-            printf("%f %f %f\n", lpos[i].x, lpos[i].y, lpos[i].z);
+          printf("%f %f %f\n", lpos[i].x, lpos[i].y, lpos[i].z);
         }
+#endif
 
         // Loop over protein atoms
         size_t ip = 0;
@@ -152,9 +161,13 @@ void fasten_main(
 
           const float chrg_init = l_params.elsc * p_params.elsc;
           const float dslv_init = p_hphb + l_hphb;
-          printf("p_hphb: %f %f %f %d %d %d %f\n", p_hphb, l_hphb, p_params.hphb, phphb_ltz, lhphb_gtz, lhphb_ltz, l_params.hphb);
 
+#if DEBUG
+          printf("p_hphb: %f %f %f %d %d %d %f\n", p_hphb, l_hphb,
+                 p_params.hphb, phphb_ltz, lhphb_gtz, lhphb_ltz, l_params.hphb);
           printf("etot %d %d %f ", il, ip, etot[0]);
+#endif
+
           for (size_t i = 0; i < NUM_TD_PER_THREAD; i++) {
             // Calculate distance between atoms
             const float x = lpos[i].x - p_atom.x;
@@ -169,22 +182,31 @@ void fasten_main(
 
             // Calculate steric energy
             etot[i] += (ONE - (distij * r_radij)) * (zone1 ? 2 * HARDNESS : ZERO);
+#if DEBUG
             printf("%f %f %f %d ", etot[i], distij, r_radij, zone1);
+#endif
 
             // Calculate formal and dipole charge interactions
             float chrg_e = chrg_init * ((zone1 ? 1 : (ONE - distbb * elcdst1)) * (distbb < elcdst ? 1 : ZERO));
             const float neg_chrg_e = -fabsf(chrg_e);
             chrg_e = type_E ? neg_chrg_e : chrg_e;
             etot[i] += chrg_e * CNSTNT;
+#if DEBUG
             printf("%f ", etot[i]);
+#endif
 
             // Calculate the two cases for Nonpolar-Polar repulsive interactions
             const float coeff = (ONE - (distbb * r_distdslv));
             float dslv_e = dslv_init * ((distbb < distdslv && phphb_nz) ? 1 : ZERO);
-            printf("dslv_init %f %f %f %f %d ", dslv_init, dslv_e, distbb, distdslv, phphb_nz);
+#if DEBUG
+            printf("dslv_init %f %f %f %f %d ", dslv_init, dslv_e, distbb,
+                   distdslv, phphb_nz);
+#endif
             dslv_e *= (zone1 ? 1 : coeff);
             etot[i] += dslv_e;
+#if DEBUG
             printf("%f %f %f %f %f %f\n", x, y, z, etot[i], chrg_init, coeff);
+#endif
           }
         } while (++ip < natpro); // loop over protein atoms
       } while (++il < natlig); // loop over ligand atoms
@@ -197,11 +219,13 @@ void fasten_main(
           etotals[td_base + i * lrange] = etot[i] * HALF;
         }
       }
+#if DEBUG
       printf("etotals\n");
       for (int i = 0; i < NUM_TD_PER_THREAD; ++i) {
         printf("%f ", etotals[i]);
       }
       printf("\n");
+#endif
     }
   }
 }

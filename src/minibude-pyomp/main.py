@@ -22,6 +22,19 @@ FILE_FORCEFIELD = "/forcefield.in"
 FILE_POSES = "/poses.in"
 FILE_REF_ENERGIES = "/ref_energies.out"
 
+def compile():
+  import time
+  t1 = time.perf_counter()
+  runKernelInternal.compile(""" (Array(float32, 2, 'C', False, aligned=True),
+  Array(int32, 1, 'C', False, aligned=True), Array(float32, 2, 'C', False, aligned=True),
+  Array(int32, 1, 'C', False, aligned=True), Array(float32, 1, 'C', False, aligned=True),
+  Array(float32, 1, 'C', False, aligned=True), Array(float32, 1, 'C', False, aligned=True),
+  Array(float32, 1, 'C', False, aligned=True), Array(float32, 1, 'C', False, aligned=True),
+  Array(float32, 1, 'C', False, aligned=True), Array(float32, 2, 'C', False, aligned=True),
+  Array(int32, 1, 'C', False, aligned=True), Array(float32, 1, 'C', False, aligned=True),
+  int32, int32, int32, int32, int32, int32) """)
+  t2 = time.perf_counter()
+  print("ctime", t2 - t1, "s")
 
 class Params:
     def __init__(self):
@@ -341,6 +354,7 @@ def runKernel(params):
     print("natpro:", params.natpro)
     print("iterations:", params.iterations)
     """
+    compile()
     kernelStart, kernelEnd = runKernelInternal(
         protein_xyz,
         protein_type,
@@ -367,35 +381,40 @@ def runKernel(params):
     return energies
 
 
-params = loadParameters()
-print("Poses     : " + str(params.nposes))
-print("Iterations: " + str(params.iterations))
-print("Ligands   : " + str(params.natlig))
-print("Proteins  : " + str(params.natpro))
-print("Deck      : " + params.deckDir)
-print("Types     : " + str(params.ntypes))
-print("WG        : " + str(params.wgSize))
-energies = runKernel(params)
+def main():
+  params = loadParameters()
+  print("Poses     : " + str(params.nposes))
+  print("Iterations: " + str(params.iterations))
+  print("Ligands   : " + str(params.natlig))
+  print("Proteins  : " + str(params.natpro))
+  print("Deck      : " + params.deckDir)
+  print("Types     : " + str(params.ntypes))
+  print("WG        : " + str(params.wgSize))
+  energies = runKernel(params)
 
-# Validate energies
-if params.nposes > REF_NPOSES:
-    print("Only validating the first {REF_NPOSES} poses.")
-nRefPoses = REF_NPOSES
+  # Validate energies
+  if params.nposes > REF_NPOSES:
+      print("Only validating the first {REF_NPOSES} poses.")
+  nRefPoses = REF_NPOSES
 
-maxdiff = np.float32(0.0)
-with open(params.deckDir + FILE_REF_ENERGIES) as f:
-    for i in range(nRefPoses):
-        e = np.fromfile(f, dtype=np.float32, count=1, sep="\n")
-        e = np.float32(e[0])
+  maxdiff = np.float32(0.0)
+  with open(params.deckDir + FILE_REF_ENERGIES) as f:
+      for i in range(nRefPoses):
+          e = np.fromfile(f, dtype=np.float32, count=1, sep="\n")
+          e = np.float32(e[0])
 
-        if abs(e - energies[i]) >= np.float32(0.01):
-            print(f"ERROR e {e} energies[{i}] {energies[i]}")
-            break
-        if abs(e) < np.float32(1.0) and abs(energies[i]) < np.float32(1.0):
-            continue
+          if abs(e - energies[i]) >= np.float32(0.01):
+              print(f"ERROR e {e} energies[{i}] {energies[i]}")
+              break
+          if abs(e) < np.float32(1.0) and abs(energies[i]) < np.float32(1.0):
+              continue
 
-        diff = abs(e - energies[i]) / e
-        if diff > maxdiff:
-            maxdiff = diff
+          diff = abs(e - energies[i]) / e
+          if diff > maxdiff:
+              maxdiff = diff
 
-print(f"Largest difference was {100*maxdiff:.3f}%.")
+  print(f"Largest difference was {100*maxdiff:.3f}%.")
+
+
+if __name__ == "__main__":
+  main()
