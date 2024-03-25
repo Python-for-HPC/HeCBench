@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 from functools import cache
 
+
 def create_dataframe_nsys(bench_name, result_dir, version):
     # Set all types to str because of awkwardness of nvprof CSV output.
     dtypes_dict = {
@@ -50,13 +51,13 @@ def create_dataframe_nsys(bench_name, result_dir, version):
     remap = dict(zip(kernels, kernels_norm))
     remap["[CUDA memcpy Device-to-Host]"] = "Memcpy DtoH"
     remap["[CUDA memcpy Host-to-Device]"] = "Memcpy HtoD"
-    cat_df.rename(columns={"Duration (us)" : "Duration","Bytes (B)" : "Size",
-                           "Reg/Trd" : "Registers Per Thread" }, inplace=True)
+    cat_df.rename(columns={"Duration (us)": "Duration", "Bytes (B)": "Size",
+                           "Reg/Trd": "Registers Per Thread"}, inplace=True)
     cat_df.replace({"Name": remap}, inplace=True)
     return cat_df
 
 
-def create_dataframe(bench_name, result_dir, version):
+def create_dataframe_nvprof(bench_name, result_dir, version):
     # Set all types to str because of awkwardness of nvprof CSV output.
     dtypes_dict = {
         "Start": str,
@@ -87,7 +88,19 @@ def create_dataframe(bench_name, result_dir, version):
         rep = file.stem.split("-")[-1]
         df = pd.read_csv(file, skiprows=3, dtype=dtypes_dict)
         # Skip the first row after the header which contains units.
+        unit_mem_size = df[0:1].Size[0]
         df = df[1:]
+        df = df.astype({"Size": float})
+        if unit_mem_size == "B":
+            df.size = df.Size / (1024.0 * 1024.0)
+        elif unit_mem_size == "KB":
+            df.Size = df.Size / 1024.0
+        elif unit_mem_size == "MB":
+            df.Size = df.Size * 1.0
+        elif unit_mem_size == "GB":
+            df.Size = df.Size * 1024.0
+        else:
+            raise Exception(f"Unhandle unit_mem_size {unit_mem_size}")
         df["Version"] = version
         df["Rep"] = int(rep) + 1
         cat_df = pd.concat((cat_df, df))
@@ -110,12 +123,11 @@ def create_dataframe(bench_name, result_dir, version):
 def get_dataframe(profiler, result_dir, bench_name):
     print("Create the dataframe...")
     cat_df = pd.DataFrame()
-    #df = create_dataframe(
     if profiler == "nvprof":
-        df = create_dataframe(
+        df = create_dataframe_nvprof(
             bench_name, result_dir / bench_name, "omp")
         cat_df = pd.concat((cat_df, df))
-        df = create_dataframe(
+        df = create_dataframe_nvprof(
             bench_name, result_dir / bench_name, "pyomp"
         )
     elif profiler == "nsys":
@@ -127,9 +139,10 @@ def get_dataframe(profiler, result_dir, bench_name):
         )
     else:
         raise Exception(f"Invalid profiler {profiler}")
-    
+
     cat_df = pd.concat((cat_df, df))
     return cat_df
+
 
 def plot_exetimes(output_dir, benchmark, df, legend):
     print("Plot exetimes...")
@@ -140,19 +153,20 @@ def plot_exetimes(output_dir, benchmark, df, legend):
     res.columns = res.columns.droplevel(0)
     ax = res.plot.bar(width=0.6, legend=legend)
     ax.set_title(benchmark["name"])
-    #ax.set_yscale("log", base=2)
-    #ax.yaxis.set_major_formatter(ScalarFormatter())
-    #ax.set_ylabel("Time (us)\n$log_2$")
+    # ax.set_yscale("log", base=2)
+    # ax.yaxis.set_major_formatter(ScalarFormatter())
+    # ax.set_ylabel("Time (us)\n$log_2$")
     ax.set_ylabel("Time (us)")
     ax.set_xlabel("")
     labels = ax.get_xticklabels()
     ax.set_xticklabels(labels, rotation=0)
-    #ax.get_legend().set_title("")
+    # ax.get_legend().set_title("")
     for container in ax.containers:
         ax.bar_label(container, fmt="%.2f")
     plt.tight_layout()
     plt.savefig(output_dir / f"exetime-{benchmark['name']}.pdf")
     plt.close()
+
 
 def plot_memcpy_times(output_dir, benchmark, df, legend):
     print("Plot memcpy times...")
@@ -167,16 +181,17 @@ def plot_memcpy_times(output_dir, benchmark, df, legend):
     ax.set_title(benchmark["name"])
     ax.set_yscale("log", base=2)
     ax.yaxis.set_major_formatter(ScalarFormatter())
-    ax.set_ylabel("Time (ms)\n$log_2$")
+    ax.set_ylabel("Time (us)\n$log_2$")
     ax.set_xlabel("")
     labels = ax.get_xticklabels()
     ax.set_xticklabels(labels, rotation=0)
-    #ax.get_legend().set_title("")
+    # ax.get_legend().set_title("")
     for container in ax.containers:
         ax.bar_label(container, fmt="%.2f")
     plt.tight_layout()
     plt.savefig(output_dir / f"memcpy-times-{benchmark['name']}.pdf")
     plt.close()
+
 
 def plot_memcpy_size(output_dir, benchmark, df, legend):
     print("Plot memcpy size...")
@@ -189,16 +204,17 @@ def plot_memcpy_size(output_dir, benchmark, df, legend):
     ax.set_title(benchmark["name"])
     ax.set_yscale("log", base=2)
     ax.yaxis.set_major_formatter(ScalarFormatter())
-    ax.set_ylabel("Size (B)\n$log_2$")
+    ax.set_ylabel("Size (MB)\n$log_2$")
     ax.set_xlabel("")
     labels = ax.get_xticklabels()
     ax.set_xticklabels(labels, rotation=0)
-    #ax.get_legend().set_title("")
+    # ax.get_legend().set_title("")
     for container in ax.containers:
         ax.bar_label(container, fmt="%.2f", rotation=-30)
     plt.tight_layout()
     plt.savefig(output_dir / f"memcpy-size-{benchmark['name']}.pdf")
     plt.close()
+
 
 def plot_reg_usage(output_dir, benchmark, df, legend):
     print("Plot register usage...")
@@ -218,10 +234,11 @@ def plot_reg_usage(output_dir, benchmark, df, legend):
     plt.savefig(output_dir / f"registers-{benchmark['name']}.pdf")
     plt.close()
 
+
 def plot_ctimes(output_dir, benchmark, df, legend):
     print("Plot ctimes ...")
     res = df.groupby("Version").mean()
-    #res.T.apply(print)
+    # res.T.apply(print)
     # Plot transpose to make Version a column (differently colored bars).
     ax = res.T.plot.bar(width=0.6, legend=legend)
     ax.set_title(benchmark["name"])
@@ -233,11 +250,13 @@ def plot_ctimes(output_dir, benchmark, df, legend):
     plt.savefig(output_dir / f"ctime-{benchmark['name']}.pdf")
     plt.close()
 
+
 def main():
     parser = argparse.ArgumentParser(
         description="Postprocess measurement results for pyomp benchmarks."
     )
-    parser.add_argument("-i", "--input", help="input configuration file", required=True)
+    parser.add_argument(
+        "-i", "--input", help="input configuration file", required=True)
     parser.add_argument("-r", "--result-dir",
                         help="path to the results directory", required=True)
     parser.add_argument("-o", "--output-dir",
@@ -275,14 +294,15 @@ def main():
         if args.benchmarks
         else config["benchmarks"]
     )
-    assert len(benchmarks_to_process) >= 1, "Expected at least 1 benchmark to process"
+    assert len(
+        benchmarks_to_process) >= 1, "Expected at least 1 benchmark to process"
 
     # Matplotlib setup.
     plt.rcParams.update({'font.size': 18})
     plt.rcParams["axes.spines.right"] = False
     plt.rcParams["axes.spines.top"] = False
-    plt.rcParams["figure.figsize"] = (8,4)
-    #ax.spines[['right', 'top']].set_visible(False)
+    plt.rcParams["figure.figsize"] = (8, 4)
+    # ax.spines[['right', 'top']].set_visible(False)
 
     legend = True
     for benchmark in benchmarks_to_process:
@@ -310,14 +330,13 @@ def main():
 
         # Plot compilation times.
         if args.plot_ctimes:
-            data = result_dir / f"{benchmark['name']}" / f"ctimes-{benchmark['name']}.csv"
+            data = result_dir / \
+                f"{benchmark['name']}" / f"ctimes-{benchmark['name']}.csv"
             df = pd.read_csv(data)
             plot_ctimes(output_dir, benchmark, df, legend)
 
         # Print legend only on the first plot.
         legend = False
-
-
 
     print("\U0001f389 DONE!")
 
