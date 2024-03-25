@@ -1,0 +1,118 @@
+==173897== NVPROF is profiling process 173897, command: /p/vast1/ggeorgak/projects/compilers/numba/test/HeCBench/src/minibude-omp/main --deck /p/vast1/ggeorgak/projects/compilers/numba/test/HeCBench/data/minibude/data/bm1 --wgsize 256 --iterations 100
+==173897== Profiling application: /p/vast1/ggeorgak/projects/compilers/numba/test/HeCBench/src/minibude-omp/main --deck /p/vast1/ggeorgak/projects/compilers/numba/test/HeCBench/data/minibude/data/bm1 --wgsize 256 --iterations 100
+==173897== Profiling result:
+"Start","Duration","Grid X","Grid Y","Grid Z","Block X","Block Y","Block Z","Registers Per Thread","Static SMem","Dynamic SMem","Size","Throughput","SrcMemType","DstMemType","Device","Context","Stream","Name","Correlation_ID"
+us,us,,,,,,,,KB,B,KB,GB/s,,,,,,,
+392377.236000,2.592000,,,,,,,,,,0.000977,0.000359,"Device","Pageable","Tesla V100-SXM2-16GB (0)","1","7","[CUDA memcpy DtoH]",102
+392442.740000,1.473000,,,,,,,,,,0.015625,0.010116,"Pageable","Device","Tesla V100-SXM2-16GB (0)","1","7","[CUDA memcpy HtoD]",104
+392755.123000,2.752000,,,,,,,,,,14.656250,5.078957,"Pageable","Device","Tesla V100-SXM2-16GB (0)","1","16","[CUDA memcpy HtoD]",108
+392802.738000,1.344000,,,,,,,,,,0.406250,0.288267,"Pageable","Device","Tesla V100-SXM2-16GB (0)","1","16","[CUDA memcpy HtoD]",114
+392855.475000,9.183000,,,,,,,,,,256.000000,26.586151,"Pageable","Device","Tesla V100-SXM2-16GB (0)","1","16","[CUDA memcpy HtoD]",120
+392902.386000,9.152000,,,,,,,,,,256.000000,26.676205,"Pageable","Device","Tesla V100-SXM2-16GB (0)","1","16","[CUDA memcpy HtoD]",127
+392946.066000,7.457000,,,,,,,,,,256.000000,32.739791,"Pageable","Device","Tesla V100-SXM2-16GB (0)","1","16","[CUDA memcpy HtoD]",132
+392993.906000,8.545000,,,,,,,,,,256.000000,28.571167,"Pageable","Device","Tesla V100-SXM2-16GB (0)","1","16","[CUDA memcpy HtoD]",141
+393036.754000,8.191000,,,,,,,,,,256.000000,29.805961,"Pageable","Device","Tesla V100-SXM2-16GB (0)","1","16","[CUDA memcpy HtoD]",146
+393078.802000,8.640000,,,,,,,,,,256.000000,28.257017,"Pageable","Device","Tesla V100-SXM2-16GB (0)","1","16","[CUDA memcpy HtoD]",151
+393099.793000,1.377000,,,,,,,,,,0.531250,0.367930,"Pageable","Device","Tesla V100-SXM2-16GB (0)","1","16","[CUDA memcpy HtoD]",156
+393591.985000,38757.565000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",180
+432476.241000,38693.757000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",192
+471286.674000,38702.461000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",204
+510103.763000,38702.174000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",216
+548923.445000,38699.100000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",228
+587755.445000,38699.327000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",240
+626570.743000,38697.661000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",252
+665459.033000,38691.134000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",264
+704278.617000,38706.015000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",276
+743119.610000,38711.197000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",288
+781995.867000,38700.541000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",300
+820850.524000,38720.702000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",312
+859696.030000,38688.861000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",324
+898500.510000,38688.255000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",336
+937303.359000,38708.575000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",348
+976124.450000,38696.157000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",360
+1014933.505000,39178.078000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",372
+1054217.409000,38736.670000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",384
+1093054.915000,38702.302000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",396
+1131859.844000,38700.733000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",408
+1170663.109000,38709.118000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",420
+1209479.014000,38715.487000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",432
+1248299.656000,38708.094000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",444
+1287111.465000,38703.134000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",456
+1325916.971000,38711.228000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",468
+1364731.212000,38693.149000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",480
+1403528.684000,38705.854000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",492
+1442337.615000,38696.700000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",504
+1481135.663000,38698.878000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",516
+1519937.809000,38715.836000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",528
+1558757.202000,38709.756000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",540
+1597568.914000,38707.549000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",552
+1636380.884000,38715.485000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",564
+1675199.445000,38732.830000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",576
+1714034.774000,38704.990000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",588
+1752845.495000,38707.485000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",600
+1791644.856000,38709.278000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",612
+1830459.674000,38697.629000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",624
+1869267.610000,38706.942000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",636
+1908077.373000,38703.516000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",648
+1946907.518000,38705.436000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",660
+1985718.207000,38709.086000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",672
+2024542.272000,38696.350000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",684
+2063351.617000,38705.213000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",696
+2102173.697000,38710.303000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",708
+2141001.411000,38698.141000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",720
+2179808.453000,38707.934000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",732
+2218620.934000,38704.446000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",744
+2257429.256000,38700.317000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",756
+2296230.952000,38700.126000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",768
+2335034.665000,38706.270000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",780
+2373843.531000,38695.516000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",792
+2412642.316000,38688.413000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",804
+2451433.870000,38701.821000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",816
+2490237.934000,38704.862000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",828
+2529058.735000,38689.439000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",840
+2567850.225000,38690.204000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",852
+2606649.297000,38700.958000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",864
+2645453.972000,38707.389000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",876
+2684262.708000,38701.727000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",888
+2723066.869000,38713.567000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",900
+2761883.862000,38697.983000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",912
+2800683.672000,38714.045000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",924
+2839500.890000,38693.309000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",936
+2878299.418000,38709.022000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",948
+2917110.492000,38693.565000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",960
+2955911.292000,38684.095000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",972
+2994697.599000,38718.236000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",984
+3033520.127000,38706.686000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",996
+3072328.321000,38698.684000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1008
+3111128.545000,38706.303000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1020
+3149947.171000,38709.565000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1032
+3188760.037000,38689.726000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1044
+3227570.149000,38705.343000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1056
+3266378.246000,38696.126000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1068
+3305179.687000,38702.526000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1080
+3344002.920000,38698.239000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1092
+3382811.242000,38710.590000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1104
+3421626.508000,38702.173000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1116
+3460436.044000,38696.447000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1128
+3499235.470000,38701.469000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1140
+3538042.223000,38701.086000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1152
+3576846.289000,38717.660000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1164
+3615665.426000,38727.869000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1176
+3654496.243000,38720.316000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1188
+3693319.316000,38681.437000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1200
+3732105.302000,38716.317000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1212
+3770922.647000,38686.046000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1224
+3809709.879000,38711.967000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1236
+3848525.208000,38695.423000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1248
+3887323.545000,38703.198000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1260
+3926130.492000,38717.117000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1272
+3964949.885000,38696.700000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1284
+4003748.029000,38708.415000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1296
+4042559.071000,38701.181000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1308
+4081361.889000,38705.981000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1320
+4120169.665000,38694.718000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1332
+4158969.058000,38711.390000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1344
+4197780.963000,38717.150000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1356
+4236600.997000,38702.846000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1368
+4275406.117000,38703.231000,256,1,1,256,1,1,149,10.757812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_546d56a0__Z11fasten_mainmimmmmPK4AtomS1_PKfS3_S3_S3_S3_S3_PK8FFParamsPf_l40",1380
+4314266.824000,6.847000,,,,,,,,,,256.000000,35.656583,"Device","Pageable","Tesla V100-SXM2-16GB (0)","1","16","[CUDA memcpy DtoH]",1383

@@ -1,0 +1,15 @@
+==153246== NVPROF is profiling process 153246, command: /p/vast1/ggeorgak/projects/compilers/numba/test/HeCBench/src/lavaMD-omp/main -boxes1d 30
+==153246== Profiling application: /p/vast1/ggeorgak/projects/compilers/numba/test/HeCBench/src/lavaMD-omp/main -boxes1d 30
+==153246== Profiling result:
+"Start","Duration","Grid X","Grid Y","Grid Z","Block X","Block Y","Block Z","Registers Per Thread","Static SMem","Dynamic SMem","Size","Throughput","SrcMemType","DstMemType","Device","Context","Stream","Name","Correlation_ID"
+us,us,,,,,,,,KB,B,MB,GB/s,,,,,,,
+402184.599000,2.881000,,,,,,,,,,0.000001,0.000323,"Device","Pageable","Tesla V100-SXM2-16GB (0)","1","7","[CUDA memcpy DtoH]",102
+402236.375000,1.472000,,,,,,,,,,0.000015,0.010123,"Pageable","Device","Tesla V100-SXM2-16GB (0)","1","7","[CUDA memcpy HtoD]",104
+402923.573000,1323.579000,,,,,,,,,,16.891479,12.462864,"Pageable","Device","Tesla V100-SXM2-16GB (0)","1","16","[CUDA memcpy HtoD]",108
+405575.914000,3258.453000,,,,,,,,,,41.198730,12.347312,"Pageable","Device","Tesla V100-SXM2-16GB (0)","1","16","[CUDA memcpy HtoD]",114
+409738.429000,758.621000,,,,,,,,,,10.299683,13.258641,"Pageable","Device","Tesla V100-SXM2-16GB (0)","1","16","[CUDA memcpy HtoD]",120
+411845.044000,3232.534000,,,,,,,,,,41.198730,12.446315,"Pageable","Device","Tesla V100-SXM2-16GB (0)","1","16","[CUDA memcpy HtoD]",127
+415845.704000,1.791000,,,,,,,,,,0.000004,0.002080,"Pageable","Device","Tesla V100-SXM2-16GB (0)","1","16","[CUDA memcpy HtoD]",133
+416327.461000,341995.411000,27000,1,1,128,1,1,68,13.132812,0,,,,,"Tesla V100-SXM2-16GB (0)","1","16","__omp_offloading_4d_3b57a025_main_l194",145
+758328.315000,1.920000,,,,,,,,,,0.000004,0.001940,"Device","Pageable","Tesla V100-SXM2-16GB (0)","1","16","[CUDA memcpy DtoH]",147
+758453.531000,3338.196000,,,,,,,,,,41.198730,12.052359,"Device","Pageable","Tesla V100-SXM2-16GB (0)","1","16","[CUDA memcpy DtoH]",150
