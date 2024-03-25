@@ -6,6 +6,7 @@
 #include <fstream>
 #include <functional>
 #include <algorithm>
+#include <array>
 #include "bude.h"
 
 typedef std::chrono::high_resolution_clock::time_point TimePoint;
