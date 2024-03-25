@@ -5,7 +5,56 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 from functools import cache
-from IPython import embed
+
+def create_dataframe_nsys(bench_name, result_dir, version):
+    # Set all types to str because of awkwardness of nvprof CSV output.
+    dtypes_dict = {
+        "Start (ns)": str,
+        "Duration (us)": str,
+        "CorrId": str,
+        "GrdX": str,
+        "GrdY": str,
+        "GrdZ": str,
+        "BlkX": str,
+        "BlkY": str,
+        "BlkZ": str,
+        "Reg/Trd": str,
+        "StcSMem (B)": str,
+        "DymSMem (B)": str,
+        "Bytes (B)": str,
+        "Throughput (MBps)": str,
+        "SrcMemKd": str,
+        "DstMemKd": str,
+        "Device": str,
+        "Ctx": str,
+        "Strm": str,
+        "Name": str,
+    }
+
+    files = result_dir.glob(f"nsys-{version}-*.csv")
+    cat_df = pd.DataFrame()
+    for file in files:
+        # Split by '-' then by '_' because of the cuda_gpu_trace suffix.
+        rep = file.stem.split("-")[-1].split("_")[0]
+        df = pd.read_csv(file, dtype=dtypes_dict)
+        df["Version"] = version
+        df["Rep"] = int(rep) + 1
+        cat_df = pd.concat((cat_df, df))
+
+    # Normalize kernel names.
+    uniq_names = set(cat_df.Name.unique())
+    mem_set = {"[CUDA memcpy Device-to-Host]", "[CUDA memcpy Host-to-Device]"}
+    kernels = uniq_names - mem_set
+    assert len(kernels) == 1, "Postprocessing expects 1 kernel!"
+    kernels_norm = [bench_name]
+    remap = dict(zip(kernels, kernels_norm))
+    remap["[CUDA memcpy Device-to-Host]"] = "Memcpy DtoH"
+    remap["[CUDA memcpy Host-to-Device]"] = "Memcpy HtoD"
+    cat_df.rename(columns={"Duration (us)" : "Duration","Bytes (B)" : "Size",
+                           "Reg/Trd" : "Registers Per Thread" }, inplace=True)
+    cat_df.replace({"Name": remap}, inplace=True)
+    return cat_df
+
 
 def create_dataframe(bench_name, result_dir, version):
     # Set all types to str because of awkwardness of nvprof CSV output.
@@ -58,15 +107,27 @@ def create_dataframe(bench_name, result_dir, version):
 
 
 @cache
-def get_dataframe(result_dir, bench_name):
+def get_dataframe(profiler, result_dir, bench_name):
     print("Create the dataframe...")
     cat_df = pd.DataFrame()
-    df = create_dataframe(
-        bench_name, result_dir / bench_name, "omp")
-    cat_df = pd.concat((cat_df, df))
-    df = create_dataframe(
-        bench_name, result_dir / bench_name, "pyomp"
-    )
+    #df = create_dataframe(
+    if profiler == "nvprof":
+        df = create_dataframe(
+            bench_name, result_dir / bench_name, "omp")
+        cat_df = pd.concat((cat_df, df))
+        df = create_dataframe(
+            bench_name, result_dir / bench_name, "pyomp"
+        )
+    elif profiler == "nsys":
+        df = create_dataframe_nsys(
+            bench_name, result_dir / bench_name, "omp")
+        cat_df = pd.concat((cat_df, df))
+        df = create_dataframe_nsys(
+            bench_name, result_dir / bench_name, "pyomp"
+        )
+    else:
+        raise Exception(f"Invalid profiler {profiler}")
+    
     cat_df = pd.concat((cat_df, df))
     return cat_df
 
@@ -90,7 +151,7 @@ def plot_exetimes(output_dir, benchmark, df, legend):
     for container in ax.containers:
         ax.bar_label(container, fmt="%.2f")
     plt.tight_layout()
-    plt.savefig(output_dir / f"exetime-{benchmark["name"]}.pdf")
+    plt.savefig(output_dir / f"exetime-{benchmark['name']}.pdf")
     plt.close()
 
 def plot_memcpy_times(output_dir, benchmark, df, legend):
@@ -128,7 +189,7 @@ def plot_memcpy_size(output_dir, benchmark, df, legend):
     ax.set_title(benchmark["name"])
     ax.set_yscale("log", base=2)
     ax.yaxis.set_major_formatter(ScalarFormatter())
-    ax.set_ylabel("Size (MB)\n$log_2$")
+    ax.set_ylabel("Size (B)\n$log_2$")
     ax.set_xlabel("")
     labels = ax.get_xticklabels()
     ax.set_xticklabels(labels, rotation=0)
@@ -181,6 +242,11 @@ def main():
                         help="path to the results directory", required=True)
     parser.add_argument("-o", "--output-dir",
                         help="path to output directory", required=True)
+    parser.add_argument("-p",
+                        "--profiler",
+                        help="profiler nvprof|nsys",
+                        choices=["nvprof", "nsys"],
+                        required=True)
     parser.add_argument(
         "-b", "--benchmarks", help="list of benchmarks to process", nargs="+"
     )
@@ -227,20 +293,20 @@ def main():
         # Plot execution times.
         if args.plot_exetimes:
             plot_exetimes(output_dir, benchmark,
-                          get_dataframe(result_dir, benchmark["name"]), legend)
+                          get_dataframe(args.profiler, result_dir, benchmark["name"]), legend)
 
         if args.plot_memcpy_times:
             plot_memcpy_times(output_dir, benchmark, get_dataframe(
-                result_dir, benchmark["name"]), legend)
+                args.profiler, result_dir, benchmark["name"]), legend)
 
         if args.plot_memcpy_size:
             plot_memcpy_size(output_dir, benchmark, get_dataframe(
-                result_dir, benchmark["name"]), legend)
+                args.profiler, result_dir, benchmark["name"]), legend)
 
         # Plot register usage.
         if args.plot_reg_usage:
             plot_reg_usage(output_dir, benchmark, get_dataframe(
-                result_dir, benchmark["name"]), legend)
+                args.profiler, result_dir, benchmark["name"]), legend)
 
         # Plot compilation times.
         if args.plot_ctimes:

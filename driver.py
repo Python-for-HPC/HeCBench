@@ -51,19 +51,26 @@ def py_compile(benchmark):
     return ctime
 
 
-def run(outdir, rep, version, argkey, benchmark, metrics, force):
+def run(profiler, outdir, rep, version, argkey, benchmark, metrics, force):
     exe = ("python " if version == "pyomp" else "") + str(
         Path.cwd() /
         f"src/{benchmark['name']}-{version}/{benchmark['exe'][version]}")
 
     cwd = Path(f"{outdir}") / benchmark['name']
 
-    tracefile = (
-        f"nvprof-metrics-{version}-{benchmark['name']}-{argkey}-{rep}.csv"
-        if metrics else
-        f"nvprof-{version}-{benchmark['name']}-{argkey}-{rep}.csv")
+    if profiler == "nvprof":
+        tracefile = (
+            f"nvprof-metrics-{version}-{benchmark['name']}-{argkey}-{rep}.csv"
+            if metrics else
+            f"nvprof-{version}-{benchmark['name']}-{argkey}-{rep}.csv")
+        check = cwd / tracefile
+    elif profiler == "nsys":
+        tracefile = (
+            f"nsys-{version}-{benchmark['name']}-{argkey}-{rep}")
+        check = cwd / f"{tracefile}.nsys-rep"
+    else:
+        raise Exception(f"Invalid profiler {profiler}")
 
-    check = cwd / tracefile
     if not force:
         if check.exists():
             print(
@@ -81,13 +88,25 @@ def run(outdir, rep, version, argkey, benchmark, metrics, force):
     print(f"\N{fire} Warmup run {version}...")
     run_internal(cmd)
 
+    if profiler == "nvprof":
+        profile_cmd = f"nvprof --print-gpu-trace --normalized-time-unit us --csv --log-file {tracefile}"
+        cmd = (profile_cmd
+               + ("--metrics all " if metrics else "") + " " + cmd )
+    elif profiler == "nsys":
+        profile_cmd = f"nsys profile --trace=cuda -o {tracefile}"
+        cmd = profile_cmd + " " + cmd
+    else:
+        raise Exception(f"Invalid profiler {profiler}")
+
     # Run through nvrpof, collect detailed metrics if enabled.
-    cmd = (
-        f"nvprof --print-gpu-trace --normalized-time-unit us --csv --log-file {tracefile} "
-        + ("--metrics all " if metrics else "") + cmd )
 
     print(f"\N{rocket} => Run cmd {cmd}")
     run_internal(cmd)
+
+    if profiler == "nsys":
+
+        cmd = f"nsys stats --report cuda_gpu_trace -f csv:dur=us:mem=B --force-export=true -o {tracefile} {tracefile}.nsys-rep"
+        run_internal(cmd)
 
 
 def main():
@@ -104,6 +123,11 @@ def main():
     parser.add_argument("-o",
                         "--output-dir",
                         help="output directory",
+                        required=True)
+    parser.add_argument("-p",
+                        "--profiler",
+                        help="profiler nvprof|nsys",
+                        choices=["nvprof", "nsys"],
                         required=True)
     parser.add_argument("-r",
                         "--repeats",
@@ -154,11 +178,11 @@ def main():
         for rep in range(args.repeats):
             # Run C openmp
             ctimes.append(["omp", c_compile(benchmark, args.arch)])
-            run(args.output_dir, rep, "omp", "default",
+            run(args.profiler, args.output_dir, rep, "omp", "default",
                 benchmark, args.metrics, args.force)
             # Run PyOMP
             ctimes.append(["pyomp", py_compile(benchmark)])
-            run(args.output_dir, rep, "pyomp", "default",
+            run(args.profiler, args.output_dir, rep, "pyomp", "default",
                 benchmark, args.metrics, args.force)
 
         ctimes_outfn = Path(f"{args.output_dir}/{benchmark['name']}") / f"ctimes-{benchmark['name']}.csv"
