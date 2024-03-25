@@ -6,16 +6,16 @@ import time
 import csv
 
 
-def c_compile(benchmark):
+def c_compile(benchmark, arch):
     cwd = Path.cwd() / f"src/{benchmark['name']}-omp"
     def clean():
-        subprocess.run("make -f Makefile.lassen clean",
+        subprocess.run("make -f Makefile.clang clean",
                        shell=True,
                        cwd=cwd,
                        check=True)
 
     def build():
-        subprocess.run("make -f Makefile.lassen",
+        subprocess.run(f"make -f Makefile.clang ARCH={arch}",
                        shell=True, cwd=cwd, check=True)
     # warmup
     print(f"\N{fire} Warmup build C version...")
@@ -97,6 +97,10 @@ def main():
                         "--input",
                         help="input configuration file",
                         required=True)
+    parser.add_argument("-a",
+                        "--arch",
+                        help="GPU arch for C compilation",
+                        required=True)
     parser.add_argument("-o",
                         "--output-dir",
                         help="output directory",
@@ -149,7 +153,7 @@ def main():
         ctimes = []
         for rep in range(args.repeats):
             # Run C openmp
-            ctimes.append(["omp", c_compile(benchmark)])
+            ctimes.append(["omp", c_compile(benchmark, args.arch)])
             run(args.output_dir, rep, "omp", "default",
                 benchmark, args.metrics, args.force)
             # Run PyOMP
