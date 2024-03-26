@@ -51,9 +51,13 @@ def create_dataframe_nsys(bench_name, result_dir, version):
     remap = dict(zip(kernels, kernels_norm))
     remap["[CUDA memcpy Device-to-Host]"] = "Memcpy DtoH"
     remap["[CUDA memcpy Host-to-Device]"] = "Memcpy HtoD"
+
     cat_df.rename(columns={"Duration (us)": "Duration", "Bytes (B)": "Size",
                            "Reg/Trd": "Registers Per Thread"}, inplace=True)
     cat_df.replace({"Name": remap}, inplace=True)
+    # Convert B to MB.
+    cat_df = cat_df.astype({"Size": float})
+    cat_df.Size = cat_df.Size / (1024.0*1024.0)
     return cat_df
 
 
@@ -87,8 +91,9 @@ def create_dataframe_nvprof(bench_name, result_dir, version):
     for file in files:
         rep = file.stem.split("-")[-1]
         df = pd.read_csv(file, skiprows=3, dtype=dtypes_dict)
-        # Skip the first row after the header which contains units.
+        # Read the mem size units as it is auto-decided by nvprof and normalize to MB.
         unit_mem_size = df[0:1].Size[0]
+        # Skip the first row after the header which contains units.
         df = df[1:]
         df = df.astype({"Size": float})
         if unit_mem_size == "B":
