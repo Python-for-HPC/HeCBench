@@ -1,0 +1,11 @@
+Start (ns),Duration (us),CorrId,GrdX,GrdY,GrdZ,BlkX,BlkY,BlkZ,Reg/Trd,StcSMem (B),DymSMem (B),Bytes (B),Throughput (MBps),SrcMemKd,DstMemKd,Device,Ctx,Strm,Name
+854942398,3.296,80,,,,,,,,,,1,0.303,Device,Pageable,NVIDIA A100-SXM4-40GB (0),1,7,[CUDA memcpy Device-to-Host]
+855003933,1.440,82,,,,,,,,,,16,11.111,Pageable,Device,NVIDIA A100-SXM4-40GB (0),1,7,[CUDA memcpy Host-to-Device]
+858022593,3367.329,86,,,,,,,,,,17712000,5242.752,Pageable,Device,NVIDIA A100-SXM4-40GB (0),1,16,[CUDA memcpy Host-to-Device]
+866571634,3470.048,92,,,,,,,,,,43200000,12441.600,Pageable,Device,NVIDIA A100-SXM4-40GB (0),1,16,[CUDA memcpy Host-to-Device]
+870580653,769.816,98,,,,,,,,,,10800000,14029.200,Pageable,Device,NVIDIA A100-SXM4-40GB (0),1,16,[CUDA memcpy Host-to-Device]
+872111518,3006.404,105,,,,,,,,,,43200000,14342.400,Pageable,Device,NVIDIA A100-SXM4-40GB (0),1,16,[CUDA memcpy Host-to-Device]
+878029063,1.472,111,,,,,,,,,,4,2.717,Pageable,Device,NVIDIA A100-SXM4-40GB (0),1,16,[CUDA memcpy Host-to-Device]
+880014901,157541.543,123,27000,1,1,128,1,1,68,13448,0,,,,,NVIDIA A100-SXM4-40GB (0),1,16,__omp_offloading_6c_3844ab1f_main_l194
+1037558523,2.432,125,,,,,,,,,,4,1.645,Device,Pageable,NVIDIA A100-SXM4-40GB (0),1,16,[CUDA memcpy Device-to-Host]
+1038743920,3487.872,128,,,,,,,,,,43200000,12355.200,Device,Pageable,NVIDIA A100-SXM4-40GB (0),1,16,[CUDA memcpy Device-to-Host]
