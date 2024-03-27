@@ -6,8 +6,9 @@ import time
 import csv
 
 
-def c_compile(benchmark, arch):
+def c_compile(repeats, benchmark, arch):
     cwd = Path.cwd() / f"src/{benchmark['name']}-omp"
+
     def clean():
         subprocess.run("make -f Makefile.clang clean",
                        shell=True,
@@ -22,91 +23,107 @@ def c_compile(benchmark, arch):
     clean()
     build()
 
-    print(f"\N{gear} => Compile C version {cwd}...")
-    clean()
-    t1 = time.perf_counter()
-    build()
-    t2 = time.perf_counter()
-    return t2 - t1
+    ctimes = []
+    for rep in range(repeats):
+        print(f"\N{gear} => Compile C version {cwd}...")
+        clean()
+        t1 = time.perf_counter()
+        build()
+        t2 = time.perf_counter()
+        ctimes.append(["omp", t2 - t1])
+
+    return ctimes
 
 
-def py_compile(benchmark):
+def py_compile(repeats, benchmark):
     cwd = Path.cwd() / f"src/{benchmark['name']}-pyomp"
     exe = benchmark['exe']['pyomp'].split(".")[0]
+
     def build():
         p = subprocess.run(f"python -c 'import {exe};{exe}.compile()'",
-                       capture_output=True,
-                       shell=True,
-                       cwd=cwd,
-                       check=True)
+                           capture_output=True,
+                           shell=True,
+                           cwd=cwd,
+                           check=True)
         return p
 
     # warmup
     print(f"\N{fire} Warmup build pyomp...")
     build()
-    print(f"\N{gear} => Compile pyomp {cwd}...")
-    p = build()
-    stdout = str(p.stdout)
-    ctime = float(stdout.split()[1])
-    return ctime
+
+    ctimes = []
+    for rep in range(repeats):
+        print(f"\N{gear} => Compile pyomp {cwd}...")
+        p = build()
+        stdout = str(p.stdout)
+        ctime = float(stdout.split()[1])
+        ctimes.append(["pyomp", ctime])
+
+    return ctimes
 
 
-def run(profiler, outdir, rep, version, argkey, benchmark, metrics, force):
+def run(repeats, profiler, outdir, version, argkey, benchmark, metrics, force):
     exe = ("python " if version == "pyomp" else "") + str(
         Path.cwd() /
         f"src/{benchmark['name']}-{version}/{benchmark['exe'][version]}")
 
     cwd = Path(f"{outdir}") / benchmark['name']
 
-    if profiler == "nvprof":
-        tracefile = (
-            f"nvprof-metrics-{version}-{benchmark['name']}-{argkey}-{rep}.csv"
-            if metrics else
-            f"nvprof-{version}-{benchmark['name']}-{argkey}-{rep}.csv")
-        check = cwd / tracefile
-    elif profiler == "nsys":
-        tracefile = (
-            f"nsys-{version}-{benchmark['name']}-{argkey}-{rep}")
-        check = cwd / f"{tracefile}.nsys-rep"
-    else:
-        raise Exception(f"Invalid profiler {profiler}")
-
-    if not force:
-        if check.exists():
-            print(
-                f"\u26A0\uFE0F WARNING: tracefile {tracefile} exists, will not re-run"
-            )
-            return
-
     def run_internal(cmd):
         subprocess.run(cmd, shell=True, cwd=cwd, check=True)
 
-    # Warmup
     # NOTE: We assume driver runs always at the HeCBench root path.
-    input_str = benchmark["inputs"][argkey].replace("$ROOT", str(Path.cwd()))
-    cmd = exe + " " + input_str
-    print(f"\N{fire} Warmup run {version}...")
-    run_internal(cmd)
+    input_str = benchmark["inputs"][argkey].replace(
+        "$ROOT", str(Path.cwd()))
 
-    if profiler == "nvprof":
-        profile_cmd = f"nvprof --print-gpu-trace --normalized-time-unit us --csv --log-file {tracefile}"
-        cmd = (profile_cmd
-               + ("--metrics all " if metrics else "") + " " + cmd )
-    elif profiler == "nsys":
-        profile_cmd = f"nsys profile --trace=cuda -o {tracefile}"
-        cmd = profile_cmd + " " + cmd
-    else:
-        raise Exception(f"Invalid profiler {profiler}")
+    warmup_has_ran = False
 
-    # Run through nvrpof, collect detailed metrics if enabled.
+    for rep in range(repeats):
+        if profiler == "nvprof":
+            tracefile = (
+                f"nvprof-metrics-{version}-{benchmark['name']}-{argkey}-{rep}.csv"
+                if metrics else
+                f"nvprof-{version}-{benchmark['name']}-{argkey}-{rep}.csv")
+            check = cwd / tracefile
+        elif profiler == "nsys":
+            tracefile = (
+                f"nsys-{version}-{benchmark['name']}-{argkey}-{rep}")
+            check = cwd / f"{tracefile}.nsys-rep"
+        else:
+            raise Exception(f"Invalid profiler {profiler}")
 
-    print(f"\N{rocket} => Run cmd {cmd}")
-    run_internal(cmd)
+        if not force:
+            if check.exists():
+                print(
+                    f"\u26A0\uFE0F WARNING: tracefile {tracefile} exists, will not re-run"
+                )
+                continue
 
-    if profiler == "nsys":
+        cmd = exe + " " + input_str
+        # Warmup
+        if not warmup_has_ran:
+            print(f"\N{fire} Warmup run {version}...")
+            run_internal(cmd)
+            warmup_has_ran = True
 
-        cmd = f"nsys stats --report cuda_gpu_trace -f csv:dur=us:mem=B --force-export=true -o {tracefile} {tracefile}.nsys-rep"
+        if profiler == "nvprof":
+            profile_cmd = f"nvprof --print-gpu-trace --normalized-time-unit us --csv --log-file {tracefile}"
+            cmd = (profile_cmd
+                   + ("--metrics all " if metrics else "") + " " + cmd)
+        elif profiler == "nsys":
+            profile_cmd = f"nsys profile --trace=cuda -o {tracefile}"
+            cmd = profile_cmd + " " + cmd
+        else:
+            raise Exception(f"Invalid profiler {profiler}")
+
+        # Run through profiler, collect detailed metrics if enabled.
+        print(f"\N{rocket} => Run cmd {cmd}")
         run_internal(cmd)
+
+        if profiler == "nsys":
+            cmd = f"nsys stats --report cuda_gpu_trace -f csv:dur=us:mem=B --force-export=true -o {tracefile} {tracefile}.nsys-rep"
+            print(f"=> Run create stats {cmd}")
+            run_internal(cmd)
 
 
 def main():
@@ -175,17 +192,17 @@ def main():
         cwd.mkdir(parents=True, exist_ok=True)
 
         ctimes = []
-        for rep in range(args.repeats):
-            # Run C openmp
-            ctimes.append(["omp", c_compile(benchmark, args.arch)])
-            run(args.profiler, args.output_dir, rep, "omp", "default",
-                benchmark, args.metrics, args.force)
-            # Run PyOMP
-            ctimes.append(["pyomp", py_compile(benchmark)])
-            run(args.profiler, args.output_dir, rep, "pyomp", "default",
-                benchmark, args.metrics, args.force)
+        # Run C openmp
+        ctimes.extend(c_compile(args.repeats, benchmark, args.arch))
+        run(args.repeats, args.profiler, args.output_dir, "omp", "default",
+            benchmark, args.metrics, args.force)
+        # Run PyOMP
+        ctimes.extend(py_compile(args.repeats, benchmark))
+        run(args.repeats, args.profiler, args.output_dir, "pyomp", "default",
+            benchmark, args.metrics, args.force)
 
-        ctimes_outfn = Path(f"{args.output_dir}/{benchmark['name']}") / f"ctimes-{benchmark['name']}.csv"
+        ctimes_outfn = Path(
+            f"{args.output_dir}/{benchmark['name']}") / f"ctimes-{benchmark['name']}.csv"
         with open(ctimes_outfn, "w") as f:
             cw = csv.writer(f, delimiter=",")
             cw.writerow(["Version", "Ctime"])
