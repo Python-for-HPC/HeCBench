@@ -20,16 +20,16 @@ def haccmk (
     vx2,
     vy2,
     vz2 ):
-  with openmp("target data map(to: xx, yy, zz, mass) \
-                          map(from: vx2, vy2, vz2) device(1)"):
+  with openmp("""target data map(to: xx[0:ilp], yy[0:ilp], zz[0:ilp], mass[0:ilp])
+                  map(from: vx2[0:n], vy2[0:n], vz2[0:n]) device(1)"""):
     total_time = np.float32(0.)
 
     for rep in range(repeat):
-      with openmp("target update to (vx2) device(1)"):
+      with openmp("target update to (vx2[0:n]) device(1)"):
         pass
-      with openmp("target update to (vy2) device(1)"):
+      with openmp("target update to (vy2[0:n]) device(1)"):
         pass
-      with openmp("target update to (vz2) device(1)"):
+      with openmp("target update to (vz2[0:n]) device(1)"):
         pass
 
       start = omp_get_wtime()
