@@ -20,7 +20,7 @@ def haccmk (
     vx2,
     vy2,
     vz2 ):
-  with openmp("""target data map(to: xx[0:ilp], yy[0:ilp], zz[0:ilp], mass[0:ilp])
+  with openmp("""target data map(to: xx, yy, zz, mass)
                   map(from: vx2[0:n], vy2[0:n], vz2[0:n]) device(1)"""):
     total_time = np.float32(0.)
 
@@ -34,7 +34,9 @@ def haccmk (
 
       start = omp_get_wtime()
 
-      with openmp("target teams distribute parallel for device(1)"):
+      with openmp("""target teams distribute parallel for
+          map(alloc: vx2[0:n], vy2[0:n], vz2[0:n])
+          device(1)"""):
         for i in range(n):
 
           ma0 = np.float32(0.269327)
