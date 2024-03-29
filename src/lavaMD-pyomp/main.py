@@ -244,14 +244,14 @@ def main():
   # assing default values
   dim_cpu_arch_arg = 0
   dim_cpu_cores_arg = 1
-  dim_cpu_boxes1d_arg = 1
+  dim_cpu_boxes1d_arg = np.int32(1)
 
   argc = len(sys.argv)
   argv = sys.argv
 
-  NUMBER_PAR_PER_BOX = 100 # keep this low to allow more blocks that share shared memory to run concurrently, code does not work for larger than 110, more speedup can be achieved with larger number and no shared memory used
+  NUMBER_PAR_PER_BOX = np.int32(100) # keep this low to allow more blocks that share shared memory to run concurrently, code does not work for larger than 110, more speedup can be achieved with larger number and no shared memory used
 
-  NUMBER_THREADS = 128 # this should be roughly equal to NUMBER_PAR_PER_BOX for best performance
+  NUMBER_THREADS = np.int32(128) # this should be roughly equal to NUMBER_PAR_PER_BOX for best performance
   print("WG size of kernel =", NUMBER_THREADS)
 
   # go through arguments
@@ -264,7 +264,7 @@ def main():
         if argc >= dim_cpu_cur_arg + 1:
           # check if value is a number
           if argv[dim_cpu_cur_arg+1].isdigit():
-            dim_cpu_boxes1d_arg = int(argv[dim_cpu_cur_arg+1])
+            dim_cpu_boxes1d_arg = np.int32(argv[dim_cpu_cur_arg+1])
             if dim_cpu_boxes1d_arg < 0:
               print("ERROR: Wrong value to -boxes1d argument, cannot be <=0")
               sys.exit(0)
@@ -290,7 +290,7 @@ def main():
     print("Provide boxes1d argument, example: -boxes1d 16")
     sys.exit(0)
 
-  par_cpu_alpha = 0.5
+  par_cpu_alpha = np.float32(0.5)
 
   # total number of boxes
   dim_cpu_number_boxes = dim_cpu_boxes1d_arg * dim_cpu_boxes1d_arg * dim_cpu_boxes1d_arg # 8*8*8=512
@@ -299,18 +299,18 @@ def main():
   dim_cpu_space_elem = dim_cpu_number_boxes * NUMBER_PAR_PER_BOX # 512*100=51,200
 
   # allocate boxes
-  box_cpu_x = np.empty(dim_cpu_number_boxes, dtype=int)
-  box_cpu_y = np.empty(dim_cpu_number_boxes, dtype=int)
-  box_cpu_z = np.empty(dim_cpu_number_boxes, dtype=int)
-  box_cpu_number = np.empty(dim_cpu_number_boxes, dtype=int)
-  box_cpu_offset = np.empty(dim_cpu_number_boxes, dtype=int)
-  box_cpu_nn = np.empty(dim_cpu_number_boxes, dtype=int)
+  box_cpu_x = np.empty(dim_cpu_number_boxes, dtype=np.int32)
+  box_cpu_y = np.empty(dim_cpu_number_boxes, dtype=np.int32)
+  box_cpu_z = np.empty(dim_cpu_number_boxes, dtype=np.int32)
+  box_cpu_number = np.empty(dim_cpu_number_boxes, dtype=np.int32)
+  box_cpu_offset = np.empty(dim_cpu_number_boxes, dtype=np.int64)
+  box_cpu_nn = np.empty(dim_cpu_number_boxes, dtype=np.int32)
 
-  box_cpu_nei_x = np.empty((dim_cpu_number_boxes,26), dtype=int)
-  box_cpu_nei_y = np.empty((dim_cpu_number_boxes,26), dtype=int)
-  box_cpu_nei_z = np.empty((dim_cpu_number_boxes,26), dtype=int)
-  box_cpu_nei_number = np.empty((dim_cpu_number_boxes,26), dtype=int)
-  box_cpu_nei_offset = np.empty((dim_cpu_number_boxes,26), dtype=int)
+  box_cpu_nei_x = np.empty((dim_cpu_number_boxes,26), dtype=np.int32)
+  box_cpu_nei_y = np.empty((dim_cpu_number_boxes,26), dtype=np.int32)
+  box_cpu_nei_z = np.empty((dim_cpu_number_boxes,26), dtype=np.int32)
+  box_cpu_nei_number = np.empty((dim_cpu_number_boxes,26), dtype=np.int32)
+  box_cpu_nei_offset = np.empty((dim_cpu_number_boxes,26), dtype=np.int64)
 
   init_box(dim_cpu_boxes1d_arg,
            box_cpu_x,
@@ -394,18 +394,18 @@ def main():
 def compile():
   import time
   t1 = time.perf_counter()
-  core.compile("""(int64, int64,
+  core.compile("""(int32, int32,
+      Array(int32, 1, 'C', False, aligned=True),
+      Array(int32, 1, 'C', False, aligned=True),
+      Array(int32, 1, 'C', False, aligned=True),
+      Array(int32, 1, 'C', False, aligned=True),
       Array(int64, 1, 'C', False, aligned=True),
-      Array(int64, 1, 'C', False, aligned=True),
-      Array(int64, 1, 'C', False, aligned=True),
-      Array(int64, 1, 'C', False, aligned=True),
-      Array(int64, 1, 'C', False, aligned=True),
-      Array(int64, 1, 'C', False, aligned=True),
+      Array(int32, 1, 'C', False, aligned=True),
+      Array(int32, 2, 'C', False, aligned=True),
+      Array(int32, 2, 'C', False, aligned=True),
+      Array(int32, 2, 'C', False, aligned=True),
+      Array(int32, 2, 'C', False, aligned=True),
       Array(int64, 2, 'C', False, aligned=True),
-      Array(int64, 2, 'C', False, aligned=True),
-      Array(int64, 2, 'C', False, aligned=True),
-      Array(int64, 2, 'C', False, aligned=True),
-      Array(int64, 2, 'C', False, aligned=True),
       Array(float32, 1, 'C', False, aligned=True),
       Array(float32, 1, 'C', False, aligned=True),
       Array(float32, 1, 'C', False, aligned=True),
@@ -415,7 +415,7 @@ def compile():
       Array(float32, 1, 'C', False, aligned=True),
       Array(float32, 1, 'C', False, aligned=True),
       Array(float32, 1, 'C', False, aligned=True),
-      int64, int64, float64)""")
+      int32, int32, float32)""")
   t2 = time.perf_counter()
   print("ctime", t2 - t1, "s");
 
