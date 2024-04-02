@@ -9,38 +9,39 @@ import math
 ADAM_MODE_0 = 0
 ADAM_MODE_1 = 1
 
-@njit(fastmath=True)
-def adam(
-    p,
-    m,
-    v,
-    g,
-    b1,
-    b2,
-    eps,
-    grad_scale,
-    step_size,
-    time_step,
-    vector_size,
-    mode,
-    decay):
-  one = np.float32(1.)
-  with openmp("target teams distribute parallel for thread_limit(256) device(1)"):
-    for j in range(vector_size):
-      # XXX: is the original timestep from 0 correct? at t=0 m_corrected,
-      # v_corrected cause division by zero.
-      for t in range(1, time_step+1):
-        scaled_grad = g[j]/grad_scale
-        m[j] = b1*m[j] + (one-b1)*scaled_grad
-        v[j] = b2*v[j] + (one-b2)*scaled_grad*scaled_grad
-        m_corrected = m[j] / (one-(b1**np.float32(t)))
-        v_corrected = v[j] / (one-(b2**np.float32(t)))
-        if mode == ADAM_MODE_0:
-          denom = math.sqrt(v_corrected + eps)
-        else:  # Mode 1
-          denom = math.sqrt(v_corrected) + eps
-        update = (m_corrected/denom) + (decay*p[j])
-        p[j] -= (step_size*update)
+# Inline
+#@njit(fastmath=True)
+#def adam(
+#    p,
+#    m,
+#    v,
+#    g,
+#    b1,
+#    b2,
+#    eps,
+#    grad_scale,
+#    step_size,
+#    time_step,
+#    vector_size,
+#    mode,
+#    decay):
+#  one = np.float32(1.)
+#  with openmp("target teams distribute parallel for thread_limit(256) device(1)"):
+#    for j in range(vector_size):
+#      # XXX: is the original timestep from 0 correct? at t=0 m_corrected,
+#      # v_corrected cause division by zero.
+#      for t in range(1, time_step+1):
+#        scaled_grad = g[j]/grad_scale
+#        m[j] = b1*m[j] + (one-b1)*scaled_grad
+#        v[j] = b2*v[j] + (one-b2)*scaled_grad*scaled_grad
+#        m_corrected = m[j] / (one-(b1**np.float32(t)))
+#        v_corrected = v[j] / (one-(b2**np.float32(t)))
+#        if mode == ADAM_MODE_0:
+#          denom = math.sqrt(v_corrected + eps)
+#        else:  # Mode 1
+#          denom = math.sqrt(v_corrected) + eps
+#        update = (m_corrected/denom) + (decay*p[j])
+#        p[j] -= (step_size*update)
 
 
 @njit
@@ -76,7 +77,7 @@ def reference(
         update = (m_corrected/denom) + (decay*p[j])
         p[j] -= (step_size*update)
 
-@njit
+@njit(fastmath=True)
 def core(
     repeat,
     p,
@@ -92,29 +93,46 @@ def core(
     vector_size,
     mode,
     decay):
-  with openmp("""target enter data
-              map(to: m, v, g, p)
+  with openmp("""target data
+              map(to: m, v, g)
+              map(tofrom: p)
               device(1)"""):
     start = omp_get_wtime()
 
+    one = np.float32(1.)
     for i in range(repeat):
-       adam(
-           p, m, v, g,
-           b1, b2,
-           eps,
-           grad_scale,
-           step_size,
-           time_step,
-           vector_size,
-           mode,
-           decay)
+      with openmp("target teams distribute parallel for thread_limit(256) device(1)"):
+        for j in range(vector_size):
+          # XXX: is the original timestep from 0 correct? at t=0 m_corrected,
+          # v_corrected cause division by zero.
+          for t in range(1, time_step+1):
+            scaled_grad = g[j]/grad_scale
+            m[j] = b1*m[j] + (one-b1)*scaled_grad
+            v[j] = b2*v[j] + (one-b2)*scaled_grad*scaled_grad
+            m_corrected = m[j] / (one-(b1**np.float32(t)))
+            v_corrected = v[j] / (one-(b2**np.float32(t)))
+            if mode == ADAM_MODE_0:
+              denom = math.sqrt(v_corrected + eps)
+            else:  # Mode 1
+              denom = math.sqrt(v_corrected) + eps
+            update = (m_corrected/denom) + (decay*p[j])
+            p[j] -= (step_size*update)
+
+
+       #adam(
+       #    p, m, v, g,
+       #    b1, b2,
+       #    eps,
+       #    grad_scale,
+       #    step_size,
+       #    time_step,
+       #    vector_size,
+       #    mode,
+       #    decay)
 
     end = omp_get_wtime()
     print("Average kernel execution time",
           (end - start)*1000.0 / repeat, "(ms)")
-
-  with openmp("target exit data map(from: p) device(1)"):
-    pass
 
 
 def main():
