@@ -17,10 +17,10 @@ def fasten_main(
     nposes,
     natlig,
     natpro,
-    protein_molecule_xyz,
-    protein_molecule_type,
-    ligand_molecule_xyz,
-    ligand_molecule_type,
+    protein_xyz,
+    protein_type,
+    ligand_xyz,
+    ligand_type,
     transforms_0,
     transforms_1,
     transforms_2,
@@ -104,12 +104,12 @@ def fasten_main(
                 pass
 
             for il in range(natlig):
-                lfindex = ligand_molecule_type[il]
+                lfindex = ligand_type[il]
                 l_params_rhe = local_forcefield_rhe[lfindex]
                 l_params_hbtype = local_forcefield_hbtype[lfindex]
                 lhphb_ltz = l_params_rhe[1] < ZERO
                 lhphb_gtz = l_params_rhe[1] > ZERO
-                linitpos = ligand_molecule_xyz[il]
+                linitpos = ligand_xyz[il]
 
                 for i in range(NUM_TD_PER_THREAD):
                     lpos[i, 0] = (
@@ -133,8 +133,8 @@ def fasten_main(
                 # print("lpos\n", lpos)
 
                 for ip in range(natpro):
-                    p_atom_xyz = protein_molecule_xyz[ip]
-                    p_atom_type = protein_molecule_type[ip]
+                    p_atom_xyz = protein_xyz[ip]
+                    p_atom_type = protein_type[ip]
                     p_params_rhe = local_forcefield_rhe[p_atom_type]
                     p_params_hbtype = local_forcefield_hbtype[p_atom_type]
                     radij = p_params_rhe[0] + l_params_rhe[0]
