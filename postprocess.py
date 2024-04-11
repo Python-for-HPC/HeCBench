@@ -189,7 +189,7 @@ def plot_exetimes(output_dir, benchmark, df, legend):
     ax = res_mean.plot.bar(legend=legend, yerr=yerr, width=0.4, **common_plot_kwargs)
     # ax.set_title(benchmark["name"])
     ax.set_title(rf"\emph{{{benchmark['name']}}}", pad=18.0)
-    ax.set_ylabel(f"Time ({unit})")
+    ax.set_ylabel(f"Time ({unit})", fontsize=26)
     ax.set_xlabel("")
     # labels = ax.get_xticklabels()
     # ax.set_xticklabels(labels, rotation=0)
@@ -238,7 +238,7 @@ def plot_memcpy_times(output_dir, benchmark, df, legend):
     ax.set_title(rf"\emph{{{benchmark['name']}}}", pad=18.0)
     ax.set_yscale("log", base=2)
     ax.yaxis.set_major_formatter(ScalarFormatter())
-    ax.set_ylabel("Time (ms)\n$log_2$")
+    ax.set_ylabel("Time (ms)\n$log_2$", fontsize=26)
     ax.set_xlabel("")
     labels = [label.get_text().replace("Memcpy ", "") for label in ax.get_xticklabels()]
     ax.set_xticklabels(labels, rotation=0)
@@ -272,7 +272,7 @@ def plot_memcpy_size(output_dir, benchmark, df, legend):
     ax.set_title(rf"\emph{{{benchmark['name']}}}", pad=18.0)
     ax.set_yscale("log", base=2)
     ax.yaxis.set_major_formatter(ScalarFormatter())
-    ax.set_ylabel("Size (MB)\n$log_2$")
+    ax.set_ylabel("Size (MB)\n$log_2$", fontsize=26)
     ax.set_xlabel("")
     labels = [label.get_text().replace("Memcpy ", "") for label in ax.get_xticklabels()]
     ax.set_xticklabels(labels, rotation=0)
@@ -306,7 +306,7 @@ def plot_reg_usage(output_dir, benchmark, df, legend):
     ax = res.plot.bar(legend=legend, width=0.4, **common_plot_kwargs)
     ax.set_title(rf"\emph{{{benchmark['name']}}}", pad=18.0)
     ax.set_xlabel("")
-    ax.set_ylabel("Number of registers")
+    ax.set_ylabel("Number of registers", fontsize=26)
     labels = ax.get_xticklabels()
     ax.set_xticklabels(labels, rotation=0)
     if legend:
@@ -334,7 +334,7 @@ def plot_ctimes(output_dir, benchmark, df, legend):
     ax = res.T.plot.bar(legend=legend, width=0.4, yerr=yerr.T, **common_plot_kwargs)
     # ax.set_title(benchmark["name"])
     ax.set_title(rf"\emph{{{benchmark['name']}}}", pad=18.0)
-    ax.set_ylabel("Time (s)")
+    ax.set_ylabel("Time (s)", fontsize=26)
     # ax.set_xticklabels([benchmark["name"]], rotation=0)
     ax.set_xticklabels([])
     if legend:
