@@ -204,15 +204,6 @@ def plot_exetimes(output_dir, benchmark, df, legend):
     plt.close()
 
 
-def plot_norm_exetimes(output_dir, df):
-    print("Plot normalized exetime...")
-    df = df[~df.Name.str.contains("Memcpy")]
-    df = df[["Name", "Duration", "Version", "Rep"]].astype({"Duration": float})
-    res = df.drop("Rep", axis=1).groupby(["Name", "Version"]).mean().unstack()
-    breakpoint()
-    pass
-
-
 def plot_memcpy_times(output_dir, benchmark, df, legend):
     print("Plot memcpy times...")
     # Keep only rows of memcpy data tranfers (HtoD or DtoH).
@@ -294,30 +285,6 @@ def plot_memcpy_size(output_dir, benchmark, df, legend):
     plt.close()
 
 
-def plot_reg_usage(output_dir, benchmark, df, legend):
-    print("Plot register usage...")
-    df = (
-        df[["Name", "Registers Per Thread", "Version", "Rep"]]
-        .dropna()
-        .astype({"Registers Per Thread": int})
-    )
-    res = df.drop("Rep", axis=1).groupby(["Name", "Version"]).mean().unstack()
-    res.columns = res.columns.droplevel(0)
-    ax = res.plot.bar(legend=legend, width=0.4, **common_plot_kwargs)
-    ax.set_title(rf"\emph{{{benchmark['name']}}}", pad=18.0)
-    ax.set_xlabel("")
-    ax.set_ylabel("Number of registers", fontsize=26)
-    labels = ax.get_xticklabels()
-    ax.set_xticklabels(labels, rotation=0)
-    if legend:
-        ax.legend(handlelength=2.0, title="", ncols=1)
-    for container in ax.containers:
-        ax.bar_label(container)
-    plt.tight_layout()
-    plt.savefig(output_dir / f"registers-{benchmark['name']}.pdf")
-    plt.close()
-
-
 def plot_ctimes(output_dir, benchmark, df, legend):
     print("Plot ctimes ...")
     res = df.groupby("Version").mean()
@@ -372,11 +339,6 @@ def main():
         "--plot-exetimes", help="plot execution times", action="store_true"
     )
     parser.add_argument(
-        "--plot-norm-exetimes",
-        help="plot normalized over C OpenMP execution times",
-        action="store_true",
-    )
-    parser.add_argument(
         "--plot-memcpy-times", help="plot memcpy times", action="store_true"
     )
     parser.add_argument(
@@ -386,7 +348,7 @@ def main():
         "--plot-ctimes", help="plot compilation times", action="store_true"
     )
     parser.add_argument(
-        "--plot-reg-usage", help="plot register usage", action="store_true"
+        "--latex", help="use latex fonts", action="store_true"
     )
     args = parser.parse_args()
 
@@ -405,9 +367,10 @@ def main():
     plt.rcParams["axes.spines.right"] = False
     plt.rcParams["axes.spines.top"] = False
     plt.rcParams["figure.figsize"] = (6, 3.7)
-    plt.rcParams["text.usetex"] = True
-    plt.rcParams["font.family"] = "serif"
-    plt.rcParams["font.serif"] = "ptm"
+    if args.latex:
+        plt.rcParams["text.usetex"] = True
+        plt.rcParams["font.family"] = "serif"
+        plt.rcParams["font.serif"] = "ptm"
 
     result_dir = Path(args.result_dir)
     output_dir = Path(args.output_dir)
@@ -422,9 +385,6 @@ def main():
         ]
     )
 
-    if args.plot_norm_exetimes:
-        plot_norm_exetimes(output_dir, pd.concat(df_dict.values()))
-
     legend = True
     for benchmark in benchmarks_to_process:
         print(f"\N{rocket} => Processing {benchmark['name']}...")
@@ -438,10 +398,6 @@ def main():
 
         if args.plot_memcpy_size:
             plot_memcpy_size(output_dir, benchmark, df_dict[benchmark["name"]], legend)
-
-        # Plot register usage.
-        if args.plot_reg_usage:
-            plot_reg_usage(output_dir, benchmark, df_dict[benchmark["name"]], legend)
 
         # Plot compilation times.
         if args.plot_ctimes:

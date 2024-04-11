@@ -19,13 +19,13 @@ def c_compile(repeats, benchmark, arch):
         subprocess.run(f"make -f Makefile.clang ARCH={arch}",
                        shell=True, cwd=cwd, check=True)
     # warmup
-    print(f"\N{fire} Warmup build C version...")
+    print(f"\N{fire} Warmup build {benchmark['name']} C version...")
     clean()
     build()
 
     ctimes = []
     for rep in range(repeats):
-        print(f"\N{gear} => Compile C version {cwd}...")
+        print(f"\N{gear} => Compile {benchmark['name']} C version {cwd}...")
         clean()
         t1 = time.perf_counter()
         build()
@@ -48,12 +48,12 @@ def py_compile(repeats, benchmark):
         return p
 
     # warmup
-    print(f"\N{fire} Warmup build pyomp...")
+    print(f"\N{fire} Warmup build {benchmark['name']} pyomp...")
     build()
 
     ctimes = []
     for rep in range(repeats):
-        print(f"\N{gear} => Compile pyomp {cwd}...")
+        print(f"\N{gear} => Compile {benchmark['name']} pyomp {cwd}...")
         p = build()
         stdout = str(p.stdout)
         ctime = float(stdout.split()[1])
