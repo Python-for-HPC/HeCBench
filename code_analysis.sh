@@ -8,7 +8,7 @@ if [[ ! -f "rust-code-analysis-cli" ]]; then
 fi
 
 rm -rf code_analysis.txt
-rm -rf code_metrics1.txt
+rm -rf code_metrics.txt
 
 cd src
 
@@ -34,7 +34,7 @@ cd ..
 
 while IFS= read -r; do
     # Print the next line
-    printf '%s\n' "$REPLY" >> code_metrics1.txt
+    printf '%s\n' "$REPLY" >> code_metrics.txt
 
     # Wait until a line starts with "metrics:"
     while ! [[ "$REPLY" =~ ^metrics: ]]; do
@@ -47,7 +47,7 @@ while IFS= read -r; do
         trimmed_line="${trimmed_line%"${trimmed_line##*[![:space:]]}"}"
 
         if [[ "$trimmed_line" =~ ^(volume:|difficulty:|effort:|time:) ]]; then
-            printf '%s\n' "$REPLY" >> code_metrics1.txt
+            printf '%s\n' "$REPLY" >> code_metrics.txt
         fi
         read -r
     done
