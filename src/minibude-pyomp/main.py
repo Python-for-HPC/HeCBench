@@ -266,29 +266,6 @@ def runKernelInternal(
 
         # +1 iteration for warmup.
         for i in range(iterations+1):
-          #fasten_main(
-          #        teams,
-          #        block,
-          #        ntypes,
-          #        nposes,
-          #        natlig,
-          #        natpro,
-          #        protein_xyz,
-          #        protein_type,
-          #        ligand_xyz,
-          #        ligand_type,
-          #        transforms_0,
-          #        transforms_1,
-          #        transforms_2,
-          #        transforms_3,
-          #        transforms_4,
-          #        transforms_5,
-          #        forcefield_rhe,
-          #        forcefield_hbtype,
-          #        results,
-          #        NUM_TD_PER_THREAD,
-          #    )
-
           # 0-th interation is warmup, timestamp on iteration 1.
           if i == 1:
             kernelStart = omp_get_wtime()
@@ -329,7 +306,6 @@ def runKernelInternal(
 
                   ix = np.int32(gid * lrange * NUM_TD_PER_THREAD + lid)
                   ix = ix if (ix < nposes) else np.int32(nposes - NUM_TD_PER_THREAD)
-                  # print("lid:", lid, gid, lrange, ix, ntypes, NUM_TD_PER_THREAD)
 
                   for i in range(lid, ntypes, lrange):
                       # local_forcefield_rhe[i, :] = forcefield_rhe[i, :] # See numbaWithOpenmp issue #23.
@@ -359,7 +335,6 @@ def runKernelInternal(
                       transform[i, 2, 2] = cx * cy
                       transform[i, 2, 3] = transforms_5[index]
                       etot[i] = ZERO
-                  # print("transform\n", transform)
 
                   with openmp("""barrier"""):
                       pass
@@ -391,7 +366,6 @@ def runKernelInternal(
                               + linitpos[1] * transform[i, 2, 1]
                               + linitpos[2] * transform[i, 2, 2]
                           )
-                      # print("lpos\n", lpos)
 
                       for ip in range(natpro):
                           p_atom_xyz = protein_xyz[ip]
@@ -430,9 +404,7 @@ def runKernelInternal(
                           r_distdslv = ONE / distdslv
                           chrg_init = l_params_rhe[2] * p_params_rhe[2]
                           dslv_init = p_hphb + l_hphb
-                          # print("p_hphb:", p_hphb, l_hphb, p_params_rhe[1], phphb_ltz, lhphb_gtz, lhphb_ltz, l_params_rhe[1], distdslv)
 
-                          # print("etot", il, ip, etot[0], end=" ")
                           for i in range(NUM_TD_PER_THREAD):
                               x = lpos[i, 0] - p_atom_xyz[0]
                               y = lpos[i, 1] - p_atom_xyz[1]
@@ -443,7 +415,6 @@ def runKernelInternal(
                               etot[i] += (ONE - (distij * r_radij)) * (
                                   TWO * HARDNESS if zone1 else ZERO
                               )
-                              # print(etot[i], distij, r_radij, zone1, end=" ")
                               chrg_e = chrg_init * (
                                   (ONE if zone1 else (ONE - distbb * elcdst1))
                                   * (ONE if distbb < elcdst else ZERO)
@@ -451,15 +422,12 @@ def runKernelInternal(
                               neg_chrg_e = abs(chrg_e) * NEGONE
                               chrg_e = neg_chrg_e if type_E else chrg_e
                               etot[i] += chrg_e * CNSTNT
-                              # print(etot[i], end=" ")
                               coeff = ONE - (distbb * r_distdslv)
                               dslv_e = dslv_init * (
                                   ONE if ((distbb < distdslv) and phphb_nz) else ZERO
                               )
-                              # print("dslv_init", dslv_init, dslv_e, distbb, distdslv, phphb_nz, end=" ")
                               dslv_e *= ONE if zone1 else coeff
                               etot[i] += dslv_e
-                              # print(x, y, z, etot[i], chrg_init, coeff)
 
                   td_base = gid * lrange * NUM_TD_PER_THREAD + lid
                   if td_base < nposes:
@@ -492,26 +460,6 @@ def runKernel(params):
     forcefield_hbtype = params.forcefield_hbtype
     nposes = params.nposes
 
-    """
-    print("protein_xyz:", protein_xyz)
-    print("protein_type:", protein_type)
-    print("ligand_xyz:", ligand_xyz)
-    print("ligand_type:", ligand_type)
-    print("transforms 0:", transforms_0)
-    print("transforms 1:", transforms_1)
-    print("transforms 2:", transforms_2)
-    print("transforms 3:", transforms_3)
-    print("transforms 4:", transforms_4)
-    print("transforms 5:", transforms_5)
-    print("forcefield_rhe:", forcefield_rhe)
-    print("forcefield_hbtype:", forcefield_hbtype)
-    print("nposes:", nposes)
-    print("wgSize:", params.wgSize)
-    print("ntypes:", params.ntypes)
-    print("natlig:", params.natlig)
-    print("natpro:", params.natpro)
-    print("iterations:", params.iterations)
-    """
     compile()
     kernelStart, kernelEnd = runKernelInternal(
         protein_xyz,
